@@ -307,11 +307,13 @@ PARAM_DEFINE_FLOAT(MC_YAW_FF, 0.5f);
 /**
  * Max roll rate
  *
- * Limit for roll rate, has effect for large rotations in autonomous mode, to avoid large control output and mixer saturation.
+ * Limit for roll rate in manual and auto modes (except acro).
+ * Has effect for large rotations in autonomous mode, to avoid large control
+ * output and mixer saturation.
  *
  * @unit deg/s
  * @min 0.0
- * @max 360.0
+ * @max 3600.0
  * @decimal 1
  * @increment 5
  * @group Multicopter Attitude Control
@@ -321,11 +323,13 @@ PARAM_DEFINE_FLOAT(MC_ROLLRATE_MAX, 220.0f);
 /**
  * Max pitch rate
  *
- * Limit for pitch rate, has effect for large rotations in autonomous mode, to avoid large control output and mixer saturation.
+ * Limit for pitch rate in manual and auto modes (except acro).
+ * Has effect for large rotations in autonomous mode, to avoid large control
+ * output and mixer saturation.
  *
  * @unit deg/s
  * @min 0.0
- * @max 360.0
+ * @max 3600.0
  * @decimal 1
  * @increment 5
  * @group Multicopter Attitude Control
@@ -335,11 +339,9 @@ PARAM_DEFINE_FLOAT(MC_PITCHRATE_MAX, 220.0f);
 /**
  * Max yaw rate
  *
- * A value of significantly over 120 degrees per second can already lead to mixer saturation.
- *
  * @unit deg/s
  * @min 0.0
- * @max 360.0
+ * @max 3600.0
  * @decimal 1
  * @increment 5
  * @group Multicopter Attitude Control
@@ -350,13 +352,11 @@ PARAM_DEFINE_FLOAT(MC_YAWRATE_MAX, 200.0f);
  * Max yaw rate in auto mode
  *
  * Limit for yaw rate, has effect for large rotations in autonomous mode,
- * to avoid large control output and mixer saturation. A value of significantly
- * over 60 degrees per second can already lead to mixer saturation.
- * A value of 30 degrees / second is recommended to avoid very audible twitches.
+ * to avoid large control output and mixer saturation.
  *
  * @unit deg/s
  * @min 0.0
- * @max 120.0
+ * @max 360.0
  * @decimal 1
  * @increment 5
  * @group Multicopter Attitude Control
