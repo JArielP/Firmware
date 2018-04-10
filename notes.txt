@@ -1,0 +1,66 @@
+PX4 - Firmware:
+- LOGGER:
+	- make own .msg file to log triggering of System ID. log this message in logger
+	- add loging Topics on modules/logger/loogger.cpp on line 640.
+
+- READ OUT OF RC VALUES:
+	- file modules/sensors/rc_update.cpp (defines the class, prompted by sensors.cpp)
+		- on line 175 it reads the channels. This function is mostly called by line 371.
+
+	- in commander, line 3635, check for rc command to start sysID.
+
+
+- FILTER:
+	- defined in src/lib/mathlib/math/filter/ , needs #include <mathlib/mathlib.h>
+	- low pass: ../LowPassFilter2p.cpp see example in modules/sensors/rc_update.h line 129 and modules/sensors/rc_update.cpp line 383 and others.
+
+- TASK HANDLING:
+	- handle sysID task like ftero task? (control_mode message, vehicle_control_mode_s)
+	- the vehicle_control_mode gets published in the commander on line 3126.
+		- at least with 5 Hz or if (nav_state_changed || mains_state_changed) (see line 3120)
+			- main state_changed = true if method main_state_transition in file state_machine_helper.cpp returns TRANSITION_CHANGED.
+
+
+
+Matlab -- converting date from SD-CARD:
+- convert ulog file into .csv file with given script (from ASL or pyulog)
+- import .csv files and extract timestamps where on the sysid topic important data is marked.
+- start matlab script from terminal: https://ch.mathworks.com/help/matlab/ref/matlablinux.html
+
+- the Topic are stored in a timeseries to extract relevant data, do the following:
+	- synchronise (or resample at 200Hz?) the two topics to copare with: https://ch.mathworks.com/help/matlab/ref/timeseries.synchronize.html
+	- Then:
+	
+	ts_new = timeseries();
+	for ind = 1:numel(ts.Data)
+	    if getdatasamples(ts_state,ind) == 1
+	        ts_new = append(ts_new,getsamples(ts_data,ind));
+	    end
+	end
+	ts_nwe.Data;
+
+- to acces the timeseries, write: sysvector('sensor_mag_0.x'), or similar
+
+
+Matalb -- sysID:
+
+-
+
+
+Theoretical, TODO:
+- read difference between open-loop Sys ID and close-loop.
+
+
+Problems for a simple system identification:
+- constants: bevore flight
+    - Moments of inertia
+- Measuring RPM on motor
+- Measuring flap deflection
+-
+
+Needed:
+- theoretical papers / books / lecture about system identification
+
+Idea for whole thesis:
+- begin with model without propeller and focus on PX4 implementation and Matlab evaluation
+- focus on aerodynamic coefficiants
