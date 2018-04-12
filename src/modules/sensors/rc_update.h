@@ -41,10 +41,12 @@
 
 #include "parameters.h"
 
+#include <uORB/uORB.h>
 #include <drivers/drv_hrt.h>
 #include <mathlib/mathlib.h>
 #include <mathlib/math/filter/LowPassFilter2p.hpp>
 #include <uORB/topics/rc_channels.h>
+#include <uORB/topics/debug_key_value.h>
 
 namespace sensors
 {
@@ -117,8 +119,10 @@ private:
 	orb_advert_t	_rc_pub = nullptr;		/**< raw r/c control topic */
 	orb_advert_t	_manual_control_pub = nullptr;	/**< manual control signal topic */
 	orb_advert_t	_actuator_group_3_pub = nullptr;/**< manual control as actuator topic */
+	orb_advert_t 	_dbg_pub = nullptr;
 
 	struct rc_channels_s _rc;			/**< r/c channel data */
+    debug_key_value_s _dbg{};
 
 	struct rc_parameter_map_s _rc_parameter_map;
 	float _param_rc_values[rc_parameter_map_s::RC_PARAM_MAP_NCHAN];	/**< parameter values for RC control */

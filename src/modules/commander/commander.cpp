@@ -567,7 +567,9 @@ int commander_main(int argc, char *argv[])
 				new_main_state = commander_state_s::MAIN_STATE_AUTO_LAND;
 			} else if (!strcmp(argv[2], "auto:precland")) {
 				new_main_state = commander_state_s::MAIN_STATE_AUTO_PRECLAND;
-			} else {
+			} else if (!strcmp(argv[2], "sys_id")) {
+                new_main_state = commander_state_s::MAIN_STATE_SYS_ID;
+            } else {
 				warnx("argument %s unsupported.", argv[2]);
 			}
 
@@ -1596,6 +1598,14 @@ Commander::run()
 	arm_auth_init(&mavlink_log_pub, &status.system_id);
 
 	while (!should_exit()) {
+        /* sys id switch overrides main switch *//*
+        if (sp_man.sysid_switch == manual_control_setpoint_s::SWITCH_POS_ON) {
+            mavlink_log_critical(&mavlink_log_pub, "SYS_ID mode enabled");
+        }
+        else if (sp_man.sysid_switch == manual_control_setpoint_s::SWITCH_POS_OFF) {
+            mavlink_log_critical(&mavlink_log_pub, "SYS_ID mode disabled");
+        }
+        */
 
 		transition_result_t arming_ret = TRANSITION_NOT_CHANGED;
 
@@ -3244,6 +3254,7 @@ set_main_state_rc(struct vehicle_status_s *status_local, vehicle_global_position
 		 (_last_sp_man.loiter_switch == sp_man.loiter_switch) &&
 		 (_last_sp_man.mode_slot == sp_man.mode_slot) &&
 		 (_last_sp_man.stab_switch == sp_man.stab_switch) &&
+         (_last_sp_man.sysid_switch == sp_man.sysid_switch) &&
 		 (_last_sp_man.man_switch == sp_man.man_switch)))) {
 
 		// store the last manual control setpoint set by the pilot in a manual state
@@ -3318,6 +3329,34 @@ set_main_state_rc(struct vehicle_status_s *status_local, vehicle_global_position
 		} else {
 			return res;
 		}
+	}
+
+    /* sys_id switch overrides main switch */
+    if (sp_man.sysid_switch == manual_control_setpoint_s::SWITCH_POS_ON) {
+        res = main_state_transition(status_local, commander_state_s::MAIN_STATE_SYS_ID, main_state_prev, &status_flags, &internal_state);
+
+        if (res == TRANSITION_DENIED) {
+            print_reject_mode(status_local, "SYS ID");
+            mavlink_log_critical(&mavlink_log_pub, "SYS_ID mode rejected");
+
+            /* fallback to LOITER if home position not set */
+            res = main_state_transition(status_local, commander_state_s::MAIN_STATE_AUTO_LOITER, main_state_prev, &status_flags, &internal_state);
+        }
+
+        else if (res == TRANSITION_CHANGED) {
+            /* changed successfully */
+            mavlink_log_critical(&mavlink_log_pub, "SYS_ID mode enabled");
+            return res;
+        }
+        else {
+            mavlink_log_critical(&mavlink_log_pub, "allready in SYS_ID mode");
+            /* allready in this state */
+            return res;
+        }
+        /* if we get here mode was rejected, continue to evaluate the main system mode */
+    }
+	else {
+		res = main_state_transition(status_local, commander_state_s::MAIN_STATE_MANUAL, main_state_prev, &status_flags, &internal_state);
 	}
 
 	/* we know something has changed - check if we are in mode slot operation */
@@ -3671,9 +3710,25 @@ set_control_mode()
 	control_mode.flag_external_manual_override_ok = (!status.is_rotary_wing && !status.is_vtol);
 	control_mode.flag_system_hil_enabled = status.hil_state == vehicle_status_s::HIL_STATE_ON;
 	control_mode.flag_control_offboard_enabled = false;
+    control_mode.flag_control_sys_id = false;
 
 	switch (status.nav_state) {
-	case vehicle_status_s::NAVIGATION_STATE_MANUAL:
+    case vehicle_status_s::NAVIGATION_STATE_SYSID:      // control mode falgs are take from stabilized (exept sys_id flag)
+        control_mode.flag_control_manual_enabled = true;
+        control_mode.flag_control_auto_enabled = false;
+        control_mode.flag_control_rates_enabled = true;
+        control_mode.flag_control_attitude_enabled = true;
+        control_mode.flag_control_rattitude_enabled = false;
+        control_mode.flag_control_altitude_enabled = false;
+        control_mode.flag_control_climb_rate_enabled = false;
+        control_mode.flag_control_position_enabled = false;
+        control_mode.flag_control_velocity_enabled = false;
+        control_mode.flag_control_acceleration_enabled = false;
+        control_mode.flag_control_termination_enabled = false;
+        control_mode.flag_control_sys_id = true;
+        break;
+
+    case vehicle_status_s::NAVIGATION_STATE_MANUAL:
 		control_mode.flag_control_manual_enabled = true;
 		control_mode.flag_control_auto_enabled = false;
 		control_mode.flag_control_rates_enabled = stabilization_required();

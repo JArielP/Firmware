@@ -278,28 +278,50 @@ FixedwingAttitudeControl::vehicle_manual_poll()
 			if (!_vcontrol_mode.flag_control_climb_rate_enabled &&
 			    !_vcontrol_mode.flag_control_offboard_enabled) {
 
-				if (_vcontrol_mode.flag_control_attitude_enabled) {
-					// STABILIZED mode generate the attitude setpoint from manual user inputs
-					_att_sp.timestamp = hrt_absolute_time();
-					_att_sp.roll_body = _manual.y * _parameters.man_roll_max + _parameters.rollsp_offset_rad;
-					_att_sp.roll_body = math::constrain(_att_sp.roll_body, -_parameters.man_roll_max, _parameters.man_roll_max);
-					_att_sp.pitch_body = -_manual.x * _parameters.man_pitch_max + _parameters.pitchsp_offset_rad;
-					_att_sp.pitch_body = math::constrain(_att_sp.pitch_body, -_parameters.man_pitch_max, _parameters.man_pitch_max);
-					_att_sp.yaw_body = 0.0f;
-					_att_sp.thrust = _manual.z;
+                if (_vcontrol_mode.flag_control_attitude_enabled && !_vcontrol_mode.flag_control_sys_id) {
+                    // STABILIZED mode generate the attitude setpoint from manual user inputs
+                    _att_sp.timestamp = hrt_absolute_time();
+                    _att_sp.roll_body = _manual.y * _parameters.man_roll_max + _parameters.rollsp_offset_rad;
+                    _att_sp.roll_body = math::constrain(_att_sp.roll_body, -_parameters.man_roll_max,
+                                                        _parameters.man_roll_max);
+                    _att_sp.pitch_body = -_manual.x * _parameters.man_pitch_max + _parameters.pitchsp_offset_rad;
+                    _att_sp.pitch_body = math::constrain(_att_sp.pitch_body, -_parameters.man_pitch_max,
+                                                         _parameters.man_pitch_max);
+                    _att_sp.yaw_body = 0.0f;
+                    _att_sp.thrust = _manual.z;
 
-					Quatf q(Eulerf(_att_sp.roll_body, _att_sp.pitch_body, _att_sp.yaw_body));
-					q.copyTo(_att_sp.q_d);
-					_att_sp.q_d_valid = true;
+                    Quatf q(Eulerf(_att_sp.roll_body, _att_sp.pitch_body, _att_sp.yaw_body));
+                    q.copyTo(_att_sp.q_d);
+                    _att_sp.q_d_valid = true;
 
-					if (_attitude_sp_pub != nullptr) {
-						/* publish the attitude rates setpoint */
-						orb_publish(_attitude_setpoint_id, _attitude_sp_pub, &_att_sp);
+                    if (_attitude_sp_pub != nullptr) {
+                        /* publish the attitude rates setpoint */
+                        orb_publish(_attitude_setpoint_id, _attitude_sp_pub, &_att_sp);
 
-					} else if (_attitude_setpoint_id) {
-						/* advertise the attitude rates setpoint */
-						_attitude_sp_pub = orb_advertise(_attitude_setpoint_id, &_att_sp);
-					}
+                    } else if (_attitude_setpoint_id) {
+                        /* advertise the attitude rates setpoint */
+                        _attitude_sp_pub = orb_advertise(_attitude_setpoint_id, &_att_sp);
+                    }
+                } else if (_vcontrol_mode.flag_control_attitude_enabled && !_vcontrol_mode.flag_control_sys_id) {
+                    // TODO: write a function set_sysid_att(); (perhaps in sys_id class?)
+                    _att_sp.timestamp = hrt_absolute_time();
+                    _att_sp.roll_body = 0.0f;
+                    _att_sp.pitch_body = 0.0f;
+                    _att_sp.yaw_body = 0.0f;
+                    _att_sp.thrust = 0.0f;
+
+                    Quatf q(Eulerf(_att_sp.roll_body, _att_sp.pitch_body, _att_sp.yaw_body));
+                    q.copyTo(_att_sp.q_d);
+                    _att_sp.q_d_valid = true;
+
+                    if (_attitude_sp_pub != nullptr) {
+                        /* publish the attitude rates setpoint */
+                        orb_publish(_attitude_setpoint_id, _attitude_sp_pub, &_att_sp);
+
+                    } else if (_attitude_setpoint_id) {
+                        /* advertise the attitude rates setpoint */
+                        _attitude_sp_pub = orb_advertise(_attitude_setpoint_id, &_att_sp);
+                    }
 
 				} else if (_vcontrol_mode.flag_control_rates_enabled &&
 					   !_vcontrol_mode.flag_control_attitude_enabled) {

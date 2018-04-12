@@ -46,6 +46,7 @@
 #include <uORB/uORB.h>
 #include <uORB/topics/actuator_controls.h>
 #include <uORB/topics/manual_control_setpoint.h>
+#include <uORB/topics/debug_key_value.h>
 
 using namespace sensors;
 
@@ -56,9 +57,11 @@ RCUpdate::RCUpdate(const Parameters &parameters)
 	  _filter_yaw(50.0f, 10.f),
 	  _filter_throttle(50.0f, 10.f)
 {
-	memset(&_rc, 0, sizeof(_rc));
+    memset(&_rc, 0, sizeof(_rc));
+    // memset(&_dbg, 0, sizeof(_dbg));
 	memset(&_rc_parameter_map, 0, sizeof(_rc_parameter_map));
 	memset(&_param_rc_values, 0, sizeof(_param_rc_values));
+    // _dbg_pub = orb_advertise(ORB_ID(debug_key_value), &_dbg);
 }
 
 int RCUpdate::init()
@@ -105,6 +108,7 @@ void RCUpdate::update_rc_functions()
 	_rc.function[rc_channels_s::RC_CHANNELS_FUNCTION_GEAR] = _parameters.rc_map_gear_sw - 1;
 	_rc.function[rc_channels_s::RC_CHANNELS_FUNCTION_STAB] = _parameters.rc_map_stab_sw - 1;
 	_rc.function[rc_channels_s::RC_CHANNELS_FUNCTION_MAN] = _parameters.rc_map_man_sw - 1;
+	_rc.function[rc_channels_s::RC_CHANNELS_FUNCTION_SYSID] = _parameters.rc_map_sysid_sw - 1;
 
 	_rc.function[rc_channels_s::RC_CHANNELS_FUNCTION_FLAPS] = _parameters.rc_map_flaps - 1;
 
@@ -440,7 +444,21 @@ RCUpdate::rc_poll(const ParameterHandles &parameter_handles)
 					     _parameters.rc_stab_th, _parameters.rc_stab_inv);
 			manual.man_switch = get_rc_sw2pos_position(rc_channels_s::RC_CHANNELS_FUNCTION_MAN,
 					    _parameters.rc_man_th, _parameters.rc_man_inv);
-
+            manual.sysid_switch = get_rc_sw2pos_position(rc_channels_s::RC_CHANNELS_FUNCTION_SYSID, _parameters.rc_sysid_th,
+                         _parameters.rc_sysid_inv);
+            /* sending debug values */
+            /*
+            _dbg.key[0] = 'E';
+            _dbg.key[1] = 'T';
+            _dbg.key[2] = 'A';
+            _dbg.value = _rc.function[rc_channels_s::RC_CHANNELS_FUNCTION_SYSID];
+            if (_dbg_pub != nullptr) {
+                orb_publish(ORB_ID(debug_key_value), _dbg_pub, &_dbg);
+            } else {
+                _dbg_pub = orb_advertise(ORB_ID(debug_key_value), &_dbg);
+            }
+            //manual.sysid_switch = get_rc_sw2pos_position(6, .5, false);
+            */
 			/* publish manual_control_setpoint topic */
 			orb_publish_auto(ORB_ID(manual_control_setpoint), &_manual_control_pub, &manual, &instance,
 					 ORB_PRIO_HIGH);

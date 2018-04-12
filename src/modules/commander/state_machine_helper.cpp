@@ -409,6 +409,7 @@ main_state_transition(struct vehicle_status_s *status, main_state_t new_main_sta
 	case commander_state_s::MAIN_STATE_STAB:
 	case commander_state_s::MAIN_STATE_ACRO:
 	case commander_state_s::MAIN_STATE_RATTITUDE:
+	case commander_state_s::MAIN_STATE_SYS_ID:
 		ret = TRANSITION_CHANGED;
 		break;
 
@@ -462,6 +463,7 @@ main_state_transition(struct vehicle_status_s *status, main_state_t new_main_sta
 		break;
 
 	case commander_state_s::MAIN_STATE_AUTO_RTL:
+	   // TODO: Put case commander_state_s::MAIN_STATE_SYS_ID: here.
 
 		/* need global position and home position */
 		if (status_flags->condition_global_position_valid && status_flags->condition_home_position_valid) {
@@ -824,6 +826,10 @@ bool set_nav_state(struct vehicle_status_s *status,
 		}
 
 		break;
+
+    case commander_state_s::MAIN_STATE_SYS_ID:
+        status->nav_state = vehicle_status_s::NAVIGATION_STATE_SYSID;
+        break;
 
 	case commander_state_s::MAIN_STATE_AUTO_PRECLAND:
 
