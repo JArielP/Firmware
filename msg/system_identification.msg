@@ -7,4 +7,3 @@ uint8 MODE_FIXED            = 20
 uint8 mode
 uint64 timestamp_start              # starting time of the current maneuver
 bool in_maneuver                    # true when vehicle is currently in sys_id maneuver (and not preparing for it)
-

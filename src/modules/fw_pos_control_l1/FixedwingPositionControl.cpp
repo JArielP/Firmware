@@ -637,7 +637,7 @@ FixedwingPositionControl::control_position(const math::Vector<2> &curr_pos, cons
 	_control_position_last_called = hrt_absolute_time();
 
 	/* only run position controller in fixed-wing mode and during transitions for VTOL */
-	if (_vehicle_status.is_rotary_wing && !_vehicle_status.in_transition_mode) {
+	if ((_vehicle_status.is_rotary_wing && !_vehicle_status.in_transition_mode) || _vehicle_status.in_sys_id_maneuver) {
 		_control_mode_current = FW_POSCTRL_MODE_OTHER;
 		return false;
 	}

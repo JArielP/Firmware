@@ -3714,8 +3714,8 @@ set_control_mode()
 
 	switch (status.nav_state) {
     case vehicle_status_s::NAVIGATION_STATE_SYSID:      // control mode falgs are take from stabilized (exept sys_id flag)
-        control_mode.flag_control_manual_enabled = true;
-        control_mode.flag_control_auto_enabled = false;
+        control_mode.flag_control_manual_enabled = false;
+        control_mode.flag_control_auto_enabled = true;
         control_mode.flag_control_rates_enabled = true;
         control_mode.flag_control_attitude_enabled = true;
         control_mode.flag_control_rattitude_enabled = false;

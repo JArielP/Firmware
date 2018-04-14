@@ -302,28 +302,7 @@ FixedwingAttitudeControl::vehicle_manual_poll()
                         /* advertise the attitude rates setpoint */
                         _attitude_sp_pub = orb_advertise(_attitude_setpoint_id, &_att_sp);
                     }
-                } else if (_vcontrol_mode.flag_control_attitude_enabled && !_vcontrol_mode.flag_control_sys_id) {
-                    // TODO: write a function set_sysid_att(); (perhaps in sys_id class?)
-                    _att_sp.timestamp = hrt_absolute_time();
-                    _att_sp.roll_body = 0.0f;
-                    _att_sp.pitch_body = 0.0f;
-                    _att_sp.yaw_body = 0.0f;
-                    _att_sp.thrust = 0.0f;
-
-                    Quatf q(Eulerf(_att_sp.roll_body, _att_sp.pitch_body, _att_sp.yaw_body));
-                    q.copyTo(_att_sp.q_d);
-                    _att_sp.q_d_valid = true;
-
-                    if (_attitude_sp_pub != nullptr) {
-                        /* publish the attitude rates setpoint */
-                        orb_publish(_attitude_setpoint_id, _attitude_sp_pub, &_att_sp);
-
-                    } else if (_attitude_setpoint_id) {
-                        /* advertise the attitude rates setpoint */
-                        _attitude_sp_pub = orb_advertise(_attitude_setpoint_id, &_att_sp);
-                    }
-
-				} else if (_vcontrol_mode.flag_control_rates_enabled &&
+                } else if (_vcontrol_mode.flag_control_rates_enabled &&
 					   !_vcontrol_mode.flag_control_attitude_enabled) {
 
 					// RATE mode we need to generate the rate setpoint from manual user inputs
@@ -391,7 +370,7 @@ FixedwingAttitudeControl::vehicle_status_poll()
 
 		/* set correct uORB ID, depending on if vehicle is VTOL or not */
 		if (!_rates_sp_id) {
-			if (_vehicle_status.is_vtol) {
+			if (_vehicle_status.is_vtol || _vehicle_status.in_sys_id_maneuver) {
 				_rates_sp_id = ORB_ID(fw_virtual_rates_setpoint);
 				_actuators_id = ORB_ID(actuator_controls_virtual_fw);
 				_attitude_setpoint_id = ORB_ID(fw_virtual_attitude_setpoint);
@@ -400,7 +379,12 @@ FixedwingAttitudeControl::vehicle_status_poll()
 
 				parameters_update();
 
-			} else {
+			} else if (_vehicle_status.in_sys_id_maneuver) {
+                _rates_sp_id = ORB_ID(fw_virtual_rates_setpoint);
+                _actuators_id = ORB_ID(actuator_controls_virtual_fw);
+                _attitude_setpoint_id = ORB_ID(fw_virtual_attitude_setpoint);
+
+            } else {
 				_rates_sp_id = ORB_ID(vehicle_rates_setpoint);
 				_actuators_id = ORB_ID(actuator_controls_0);
 				_attitude_setpoint_id = ORB_ID(vehicle_attitude_setpoint);

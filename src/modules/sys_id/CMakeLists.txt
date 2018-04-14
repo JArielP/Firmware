@@ -32,11 +32,11 @@
 ############################################################################
 
 px4_add_module(
-	MODULE templates__module
-	MAIN module
+	MODULE templates__sys_id
+	MAIN sys_id
 	STACK_MAIN 1024
 	SRCS
-        sys_id.cpp
+		sys_id.cpp
 	DEPENDS
 		platforms__common
 		modules__uORB
