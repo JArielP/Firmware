@@ -46,7 +46,6 @@
 #include <uORB/topics/actuator_controls.h>
 #include <uORB/topics/home_position.h>
 #include <uORB/topics/position_setpoint.h>
-#include <uORB/topics/position_setpoint_triplet.h>
 #include <uORB/topics/vehicle_local_position.h>
 
 using matrix::Eulerf;
@@ -105,7 +104,6 @@ private:
     actuator_controls_s _virtual_actuator {};
     system_identification_s _sys_id {};
 	home_position_s _home_position {};
-    position_setpoint_triplet_s _position_tripl{};
     vehicle_local_position_s _vehicle_local_pos {};
 
 	orb_advert_t	_actuators_0_pub{nullptr};		/**< actuator control group 0 setpoint */
@@ -118,10 +116,6 @@ private:
 	//TODO: change description
 	orb_advert_t	_attitude_sp_pub{nullptr};		/**< actuator control group 0 setpoint */
 	orb_id_t 		_attitude_sp_id{nullptr};	// pointer to correct actuator controls0 uORB metadata structure
-
-    //TODO: change description
-    orb_advert_t	_pos_tripl_pub{nullptr};		/**< actuator control group 0 setpoint */
-    orb_id_t 		_pos_tripl_id{nullptr};	// pointer to correct actuator controls0 uORB metadata structure
 
     //TODO: change description
     orb_advert_t	_sys_id_pub{nullptr};		/**< actuator control group 0 setpoint */

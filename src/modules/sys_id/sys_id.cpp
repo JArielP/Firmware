@@ -309,7 +309,6 @@ void SysID::run()
 	_actuators_id = ORB_ID(actuator_controls_0);
 	_vehicle_status_id = ORB_ID(vehicle_status);
     _attitude_sp_id = ORB_ID(vehicle_attitude_setpoint);
-    _pos_tripl_id = ORB_ID(position_setpoint_triplet_sys_id);
     _sys_id_id = ORB_ID(system_identification);
 
     /* rate limit control mode updates to 5Hz */
