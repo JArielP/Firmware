@@ -88,6 +88,7 @@ uint8 VEHICLE_MOUNT_MODE_RC_TARGETING = 3			# Load neutral position and start RC
 uint8 VEHICLE_MOUNT_MODE_GPS_POINT = 4				# Load neutral position and start to point to Lat,Lon,Alt |
 uint8 VEHICLE_MOUNT_MODE_ENUM_END = 5				#
 
+# hardcoded in vehicle_roi too!
 uint8 VEHICLE_ROI_NONE = 0                         # No region of interest |
 uint8 VEHICLE_ROI_WPNEXT = 1                       # Point toward next MISSION |
 uint8 VEHICLE_ROI_WPINDEX = 2                      # Point toward given MISSION |

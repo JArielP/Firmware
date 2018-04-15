@@ -1,5 +1,6 @@
 # Vehicle Region Of Interest (ROI)
 
+# hardcoded in vehicle_command too!
 uint8 ROI_NONE = 0                         # No region of interest
 uint8 ROI_WPNEXT = 1                       # Point toward next MISSION with optional offset
 uint8 ROI_WPINDEX = 2                      # Point toward given MISSION
