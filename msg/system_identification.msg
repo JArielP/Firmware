@@ -1,9 +1,11 @@
-uint8 MODE_WAIT_FOR_COMMAND = 0     # this will execute a loiter with radius 30, altitude 50 above home position
-uint8 MODE_FLY_TO_HOME      = 1     # flys back to home position to eventually restart a maneuver.
+uint8 MODE_NONE             = 1
+uint8 MODE_FIXED_PITCH      = 2
+uint8 MODE_FIXED_ELEVATOR   = 4
+uint8 MODE_211_ROLL         = 8
+uint8 MODE_211_PITCH        = 16
+uint8 MODE_211_YAW          = 32
+uint8 MODE_MAX              = 64
 
-uint8 MODE_STABILIZED       = 10
-uint8 MODE_FIXED            = 20
-
-uint8 mode
-uint64 timestamp_start              # starting time of the current maneuver
-bool in_maneuver                    # true when vehicle is currently in sys_id maneuver (and not preparing for it)
+uint8 mode                          # describes in witch sys_id maneuver (according to MODE bitmask) we are currently in
+uint64 timestamp_start_maneuver     # starting time of the current maneuver
+bool maneuver_valid                 # true if current maneuver (or last, if in recover-phase) is valid.

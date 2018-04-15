@@ -370,7 +370,7 @@ FixedwingAttitudeControl::vehicle_status_poll()
 
 		/* set correct uORB ID, depending on if vehicle is VTOL or not */
 		if (!_rates_sp_id) {
-			if (_vehicle_status.is_vtol || _vehicle_status.in_sys_id_maneuver) {
+			if (_vehicle_status.is_vtol) {
 				_rates_sp_id = ORB_ID(fw_virtual_rates_setpoint);
 				_actuators_id = ORB_ID(actuator_controls_virtual_fw);
 				_attitude_setpoint_id = ORB_ID(fw_virtual_attitude_setpoint);

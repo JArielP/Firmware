@@ -35,6 +35,7 @@
 
 #include <px4_module.h>
 #include <px4_module_params.h>
+#include <geo/geo.h>
 #include <drivers/drv_hrt.h>
 #include <mathlib/mathlib.h>
 #include <uORB/uORB.h>
@@ -43,6 +44,10 @@
 #include <uORB/topics/vehicle_status.h>
 #include <uORB/topics/vehicle_attitude_setpoint.h>
 #include <uORB/topics/actuator_controls.h>
+#include <uORB/topics/home_position.h>
+#include <uORB/topics/position_setpoint.h>
+#include <uORB/topics/position_setpoint_triplet.h>
+#include <uORB/topics/vehicle_local_position.h>
 
 using matrix::Eulerf;
 using matrix::Quatf;
@@ -84,17 +89,24 @@ private:
 	 */
 	void parameters_update(int parameter_update_sub, bool force = false);
 
-	void set_state(bool in_maneuver);
+	void set_vehicle_status();
 	void set_rates(actuator_controls_s &_actuator);
 	void set_attitude(float roll, float pitch, float yaw, float thrust);
 
 	int _vehicle_command_sub{-1};
 	int _vehicle_status_sub{-1};
-	int _virtual_actuator_sub{-1};
+    int _virtual_actuator_sub{-1};
+	int _sys_id_sub{-1};
+    int _home_position_sub{-1};
+    int _vehicle_local_pos_sub{-1};
 
 	vehicle_command_s _vehicle_command {};
 	vehicle_status_s _vehicle_status {};
-	actuator_controls_s _virtual_actuator {};
+    actuator_controls_s _virtual_actuator {};
+    system_identification_s _sys_id {};
+	home_position_s _home_position {};
+    position_setpoint_triplet_s _position_tripl{};
+    vehicle_local_position_s _vehicle_local_pos {};
 
 	orb_advert_t	_actuators_0_pub{nullptr};		/**< actuator control group 0 setpoint */
 	orb_id_t 		_actuators_id{nullptr};	// pointer to correct actuator controls0 uORB metadata structure
@@ -107,9 +119,36 @@ private:
 	orb_advert_t	_attitude_sp_pub{nullptr};		/**< actuator control group 0 setpoint */
 	orb_id_t 		_attitude_sp_id{nullptr};	// pointer to correct actuator controls0 uORB metadata structure
 
+    //TODO: change description
+    orb_advert_t	_pos_tripl_pub{nullptr};		/**< actuator control group 0 setpoint */
+    orb_id_t 		_pos_tripl_id{nullptr};	// pointer to correct actuator controls0 uORB metadata structure
+
+    //TODO: change description
+    orb_advert_t	_sys_id_pub{nullptr};		/**< actuator control group 0 setpoint */
+    orb_id_t 		_sys_id_id{nullptr};	// pointer to correct actuator controls0 uORB metadata structure
+
 	void vehicle_command_poll();
 	void vehicle_status_poll();
 	void actuator_poll();
+	void sys_id_poll();
+    void home_position_poll();
+    void vehicle_local_pos_poll();
+    void set_sys_id_topic();
+
+    bool get_new_maneuver;
+
+	position_setpoint_s _pos_sp_0 {};
+	position_setpoint_s _pos_sp_1 {};
+	position_setpoint_s _pos_sp_2 {};
+	position_setpoint_s _pos_sp_3 {};
+
+    //TODO: put into parameters:
+    uint8_t sys_id_modes;
+    float tirm_time;
+    float activate_time;
+	float direction;
+	float sys_id_altitude;
+
 
 
 	DEFINE_PARAMETERS(

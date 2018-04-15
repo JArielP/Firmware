@@ -1459,6 +1459,9 @@ Commander::run()
 	memset(&vtol_status, 0, sizeof(vtol_status));
 	vtol_status.vtol_in_rw_mode = true;		//default for vtol is rotary wing
 
+    /* Subscribe to vehicle status topic */
+    int vehicle_status_sub = orb_subscribe(ORB_ID(vehicle_status));
+
 	/* subscribe to estimator status topic */
 	int estimator_status_sub = orb_subscribe(ORB_ID(estimator_status));
 	struct estimator_status_s estimator_status;
@@ -2918,7 +2921,15 @@ Commander::run()
 			set_control_mode();
 			control_mode.timestamp = now;
 			orb_publish(ORB_ID(vehicle_control_mode), control_mode_pub, &control_mode);
+            /* update vehicle status*/
+            orb_check(vehicle_status_sub, &updated);
 
+            if (updated) {
+                vehicle_status_s old_status;
+                /* vehicle status changed */
+                orb_copy(ORB_ID(vehicle_status), vehicle_status_sub, &old_status);
+                status.in_sys_id_maneuver = old_status.in_sys_id_maneuver;
+            }
 			status.timestamp = now;
 			orb_publish(ORB_ID(vehicle_status), status_pub, &status);
 
@@ -3059,6 +3070,7 @@ Commander::run()
 	px4_close(battery_sub);
 	px4_close(land_detector_sub);
 	px4_close(estimator_status_sub);
+    px4_close(vehicle_status_sub);
 
 	thread_running = false;
 }
