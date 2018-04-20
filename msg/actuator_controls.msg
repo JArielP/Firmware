@@ -14,5 +14,5 @@ uint64 timestamp_sample	    # the timestamp the data this control response is ba
 float32[8] control
 
 # TOPICS actuator_controls actuator_controls_0 actuator_controls_1 actuator_controls_2 actuator_controls_3
-# TOPICS actuator_controls_virtual_fw actuator_controls_virtual_mc
+# TOPICS actuator_controls_virtual_fw actuator_controls_virtual_mc actuator_controls_virtual_sys_id
 

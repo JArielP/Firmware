@@ -378,17 +378,26 @@ FixedwingAttitudeControl::vehicle_status_poll()
 				_parameter_handles.vtol_type = param_find("VT_TYPE");
 
 				parameters_update();
+                PX4_INFO("Publishing onto vtol acctuator topic");
 
-			} else if (_vehicle_status.in_sys_id_maneuver) {
-                _rates_sp_id = ORB_ID(fw_virtual_rates_setpoint);
-                _actuators_id = ORB_ID(actuator_controls_virtual_fw);
-                _attitude_setpoint_id = ORB_ID(fw_virtual_attitude_setpoint);
-
-            } else {
+			} else {
 				_rates_sp_id = ORB_ID(vehicle_rates_setpoint);
 				_actuators_id = ORB_ID(actuator_controls_0);
 				_attitude_setpoint_id = ORB_ID(vehicle_attitude_setpoint);
+                PX4_INFO("Publishing onto normal acctuator topic");
 			}
+		}
+		if (_vehicle_status.in_sys_id_maneuver && _actuators_id != ORB_ID(actuator_controls_virtual_sys_id)) {
+			_rates_sp_id = ORB_ID(vehicle_rates_setpoint);
+			_actuators_id = ORB_ID(actuator_controls_virtual_sys_id);
+			_attitude_setpoint_id = ORB_ID(vehicle_attitude_setpoint);
+			PX4_INFO("Publishing onto sys_id acctuator topic");
+		}
+		else if (!_vehicle_status.in_sys_id_maneuver && _actuators_id != ORB_ID(actuator_controls_0)) {
+			_rates_sp_id = ORB_ID(vehicle_rates_setpoint);
+			_actuators_id = ORB_ID(actuator_controls_0);
+			_attitude_setpoint_id = ORB_ID(vehicle_attitude_setpoint);
+			PX4_INFO("Publishing onto normal acctuator topic");
 		}
 	}
 }

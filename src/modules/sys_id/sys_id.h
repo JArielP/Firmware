@@ -91,15 +91,16 @@ private:
 	void set_vehicle_status();
 	void set_rates(actuator_controls_s &_actuator);
 	void set_attitude(float roll, float pitch, float yaw, float thrust);
+    void reset_attitude_integrators();
+	void set_sys_id_topic();
 
-	int _vehicle_command_sub{-1};
+    void reset_attitude_integrators(bool roll, bool pitch, bool yaw);
+
 	int _vehicle_status_sub{-1};
     int _virtual_actuator_sub{-1};
 	int _sys_id_sub{-1};
-    int _home_position_sub{-1};
     int _vehicle_local_pos_sub{-1};
 
-	vehicle_command_s _vehicle_command {};
 	vehicle_status_s _vehicle_status {};
     actuator_controls_s _virtual_actuator {};
     system_identification_s _sys_id {};
@@ -121,13 +122,10 @@ private:
     orb_advert_t	_sys_id_pub{nullptr};		/**< actuator control group 0 setpoint */
     orb_id_t 		_sys_id_id{nullptr};	// pointer to correct actuator controls0 uORB metadata structure
 
-	void vehicle_command_poll();
 	void vehicle_status_poll();
 	void actuator_poll();
 	void sys_id_poll();
-    void home_position_poll();
     void vehicle_local_pos_poll();
-    void set_sys_id_topic();
 
     bool get_new_maneuver;
 

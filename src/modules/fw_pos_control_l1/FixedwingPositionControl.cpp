@@ -31,6 +31,7 @@
  *
  ****************************************************************************/
 
+#include <lib/mathlib/math/Vector.hpp>
 #include "FixedwingPositionControl.hpp"
 
 extern "C" __EXPORT int fw_pos_control_l1_main(int argc, char *argv[]);
@@ -1669,10 +1670,12 @@ FixedwingPositionControl::run()
 					if (_attitude_sp_pub != nullptr) {
 						/* publish the attitude setpoint */
 						orb_publish(_attitude_setpoint_id, _attitude_sp_pub, &_att_sp);
+                        // PX4_INFO("Publishing attitude");
 
 					} else if (_attitude_setpoint_id != nullptr) {
 						/* advertise and publish */
 						_attitude_sp_pub = orb_advertise(_attitude_setpoint_id, &_att_sp);
+                        // PX4_INFO("Publishing attitude");
 					}
 				}
 
@@ -1762,7 +1765,7 @@ FixedwingPositionControl::tecs_update_pitch_throttle(float alt_sp, float airspee
 	_last_tecs_update = hrt_absolute_time();
 
 	// do not run TECS if we are not in air
-	bool run_tecs = !_vehicle_land_detected.landed;
+	bool run_tecs = !_vehicle_land_detected.landed || _vehicle_status.in_sys_id_maneuver;
 
 	// do not run TECS if vehicle is a VTOL and we are in rotary wing mode or in transition
 	// (it should also not run during VTOL blending because airspeed is too low still)
@@ -1853,7 +1856,7 @@ FixedwingPositionControl::tecs_update_pitch_throttle(float alt_sp, float airspee
 				    _control_mode.flag_control_velocity_enabled ||
 				    _control_mode.flag_control_altitude_enabled));
 
-	/* update TECS vehicle state estimates */
+	/* update TECS vehicle state estimates */				// TODO: Hack for vertical velocity state?
 	_tecs.update_vehicle_state_estimates(_airspeed, _R_nb,
 					     accel_body, (_global_pos.timestamp > 0), in_air_alt_control,
 					     _global_pos.alt, _local_pos.v_z_valid, _local_pos.vz, _local_pos.az);

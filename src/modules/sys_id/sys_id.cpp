@@ -170,20 +170,6 @@ SysID::SysID(int example_param, bool example_flag)
 }
 
 void
-SysID::vehicle_command_poll()
-{
-	bool updated;
-
-	orb_check(_vehicle_command_sub, &updated);
-
-	if (updated) {
-		orb_copy(ORB_ID(vehicle_command), _vehicle_command_sub, &_vehicle_command);
-		// handle_command();
-		// PX4_INFO("vehicle_command: ");
-	}
-}
-
-void
 SysID::vehicle_status_poll(){
 	bool updated;
 
@@ -202,7 +188,8 @@ SysID::actuator_poll()
 	orb_check(_virtual_actuator_sub, &updated);
 
 	if (updated) {
-		orb_copy(ORB_ID(actuator_controls_virtual_fw), _virtual_actuator_sub, &_virtual_actuator);
+		orb_copy(ORB_ID(actuator_controls_virtual_sys_id), _virtual_actuator_sub, &_virtual_actuator);
+        PX4_INFO("Polling actuators");
 	}
 }
 
@@ -216,18 +203,6 @@ SysID::sys_id_poll()
 	if (updated) {
 		orb_copy(ORB_ID(system_identification), _sys_id_sub, &_sys_id);
 	}
-}
-
-void
-SysID::home_position_poll()
-{
-    bool updated;
-
-    orb_check(_home_position_sub, &updated);
-
-    if (updated) {
-        orb_copy(ORB_ID(home_position), _home_position_sub, &_home_position);
-    }
 }
 
 void
@@ -262,7 +237,6 @@ void SysID::set_sys_id_topic() {
 
 
 void SysID::set_attitude(float roll, float pitch, float yaw, float thrust) {
-	// TODO: check if at given time this function is the only one who publishes the attitudes (should be OK)
     vehicle_attitude_setpoint_s _att_sp;
     _att_sp.timestamp = hrt_absolute_time();
     _att_sp.roll_body = roll;
@@ -282,7 +256,59 @@ void SysID::set_attitude(float roll, float pitch, float yaw, float thrust) {
         /* advertise the attitude rates setpoint */
         _attitude_sp_pub = orb_advertise(_attitude_sp_id, &_att_sp);
     }
+}
 
+void
+SysID::reset_attitude_integrators() {
+    vehicle_attitude_setpoint_s _att_sp;
+    _att_sp.timestamp = hrt_absolute_time();
+    _att_sp.roll_body = 0.0f;
+    _att_sp.pitch_body = 0.0f;
+    _att_sp.yaw_body = 0.0f;
+    _att_sp.thrust = 0.0f;
+
+    Quatf q(Eulerf(_att_sp.roll_body, _att_sp.pitch_body, _att_sp.yaw_body));
+    q.copyTo(_att_sp.q_d);
+    _att_sp.q_d_valid = true;
+    // same as after switching from STABILIZED mode?
+    _att_sp.roll_reset_integral = true;
+    _att_sp.pitch_reset_integral = false;
+    _att_sp.yaw_reset_integral = false;
+
+    if (_attitude_sp_pub != nullptr) {
+        /* publish the attitude rates setpoint */
+        orb_publish(_attitude_sp_id, _attitude_sp_pub, &_att_sp);
+
+    } else if (_attitude_sp_id) {
+        /* advertise the attitude rates setpoint */
+        _attitude_sp_pub = orb_advertise(_attitude_sp_id, &_att_sp);
+    }
+}
+void
+SysID::reset_attitude_integrators(bool roll, bool pitch, bool yaw) {
+    vehicle_attitude_setpoint_s _att_sp;
+    _att_sp.timestamp = hrt_absolute_time();
+    _att_sp.roll_body = 0.0f;
+    _att_sp.pitch_body = 0.0f;
+    _att_sp.yaw_body = 0.0f;
+    _att_sp.thrust = 0.0f;
+
+    Quatf q(Eulerf(_att_sp.roll_body, _att_sp.pitch_body, _att_sp.yaw_body));
+    q.copyTo(_att_sp.q_d);
+    _att_sp.q_d_valid = true;
+    // same as after switching from STABILIZED mode?
+    _att_sp.roll_reset_integral = roll;
+    _att_sp.pitch_reset_integral = pitch;
+    _att_sp.yaw_reset_integral = yaw;
+
+    if (_attitude_sp_pub != nullptr) {
+        /* publish the attitude rates setpoint */
+        orb_publish(_attitude_sp_id, _attitude_sp_pub, &_att_sp);
+
+    } else if (_attitude_sp_id) {
+        /* advertise the attitude rates setpoint */
+        _attitude_sp_pub = orb_advertise(_attitude_sp_id, &_att_sp);
+    }
 }
 
 void SysID::set_rates(actuator_controls_s &_actuator) {
@@ -299,20 +325,19 @@ void SysID::run()
 {
 	// Example: run the loop synchronized to the sensor_combined topic publication
 	int sensor_combined_sub = orb_subscribe(ORB_ID(sensor_combined));
-    _vehicle_command_sub = orb_subscribe(ORB_ID(vehicle_command));
 	_vehicle_status_sub = orb_subscribe(ORB_ID(vehicle_status));
-	_virtual_actuator_sub = orb_subscribe(ORB_ID(actuator_controls_virtual_fw));
+	_virtual_actuator_sub = orb_subscribe(ORB_ID(actuator_controls_virtual_sys_id));
 	_sys_id_sub = orb_subscribe(ORB_ID(system_identification));
-	_home_position_sub = orb_subscribe(ORB_ID(home_position));
     _vehicle_local_pos_sub = orb_subscribe(ORB_ID(vehicle_local_position));
+
 
 	_actuators_id = ORB_ID(actuator_controls_0);
 	_vehicle_status_id = ORB_ID(vehicle_status);
-    _attitude_sp_id = ORB_ID(vehicle_attitude_setpoint);
+    _attitude_sp_id = ORB_ID(vehicle_attitude_setpoint); // _attitude_sp_id = ORB_ID(fw_virtual_attitude_setpoint);
     _sys_id_id = ORB_ID(system_identification);
 
     /* rate limit control mode updates to 5Hz */
-    orb_set_interval(_vehicle_command_sub, 200);
+    // orb_set_interval(_vehicle_command_sub, 200);
 
 	px4_pollfd_struct_t fds[1];
     fds[0].fd = sensor_combined_sub;
@@ -324,17 +349,15 @@ void SysID::run()
 
 	// polls the topics:
 	sys_id_poll();
-	vehicle_command_poll();
 	actuator_poll();
 	vehicle_status_poll();
-	home_position_poll();
     vehicle_local_pos_poll();
 
     _vehicle_status.in_sys_id_maneuver = false;
     set_vehicle_status();
 
 	// TODO: move to parameters
-	sys_id_modes = 6;
+	sys_id_modes = 10;
 	tirm_time = 10.0f;
 	activate_time = 3.0f;
 	sys_id_altitude = 50.0f;
@@ -344,7 +367,7 @@ void SysID::run()
     bool maneuvers_finished = false;
 
 	while (!should_exit()) {
-        // TODO: sysnchronize with other topic.
+        // TODO: sysnchronize with an other topic.
 		// wait for up to 1000ms for data
 		int pret = px4_poll(fds, (sizeof(fds) / sizeof(fds[0])), 1000);
 
@@ -364,10 +387,8 @@ void SysID::run()
 
             // polls the topics:
             sys_id_poll();
-			vehicle_command_poll();
 			actuator_poll();
             vehicle_status_poll();
-			home_position_poll();
             vehicle_local_pos_poll();
 
 			if (_vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_SYSID && !maneuvers_finished) {
@@ -394,21 +415,29 @@ void SysID::run()
 							break;
 
 						case system_identification_s::MODE_FIXED_PITCH:
-							set_attitude(0.0f, math::radians(3.0f), 0.0f, 0.0f); // roll, pitch, yaw, thrust
+							set_attitude(0.0f, math::radians(0.0f), 0.0f, 0.0f); // roll, pitch, yaw, thrust
 							set_rates(_virtual_actuator);
                             // PX4_WARN("starting system identification mode MODE_FIXED_PITCH");
 							break;
 
 						case system_identification_s::MODE_FIXED_ELEVATOR:
-							set_attitude(0.0f, 0.0f, 0.0f, 0.0f); // roll, pitch, yaw, thrust
-							_virtual_actuator.timestamp = hrt_absolute_time();
-							_virtual_actuator.control[actuator_controls_s::INDEX_PITCH] = 0.0f;
+							set_attitude(math::radians(0.0f), 0.0f, 0.0f, 0.0f); // roll, pitch, yaw, thrust
 							set_rates(_virtual_actuator);
                             // PX4_WARN("starting system identification mode MODE_FIXED_ELEVATOR");
 							break;
 
 						case system_identification_s::MODE_211_ROLL:
 							set_attitude(0.0f, 0.0f, 0.0f, 0.0f); // roll, pitch, yaw, thrust
+                            if (hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) > 2000000 &&
+                                hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) < 4000000) {
+                                _virtual_actuator.timestamp = hrt_absolute_time();
+                                _virtual_actuator.control[actuator_controls_s::INDEX_ROLL] = 0.6f;
+                            }
+                            else if (hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) > 4000000 &&
+                                     hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) < 6000000) {
+                                _virtual_actuator.timestamp = hrt_absolute_time();
+                                _virtual_actuator.control[actuator_controls_s::INDEX_ROLL] = -0.6f;
+                            }
 							set_rates(_virtual_actuator);
                             // PX4_WARN("starting system identification mode MODE_211_ROLL");
 							break;
@@ -432,13 +461,15 @@ void SysID::run()
                     /*
                      * conditions to end the one maneuver
                      */
-					if (hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) > 5000000) {
+					if (hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) > 10000000) {
 						_vehicle_status.in_sys_id_maneuver = false;
                         status_changed = true;
+                        reset_attitude_integrators();
 					}
 					/* TODO: else if (altitude || body_roll) {
 					 * _sys_id.maneuver_valid = false;
 					 * _vehicle_status.in_sys_id_maneuver = false;
+					 * reset_attitude_integrators();
 					 * }
 					 */
 				}
@@ -470,12 +501,14 @@ void SysID::run()
                     /*
                      * initialize sys_id mode
                      */
-                    PX4_INFO("starting system identification mode");
+                    PX4_INFO("starting system identification mode %.3f", (double)_sys_id.mode);
 					get_new_maneuver = false;
 					_vehicle_status.in_sys_id_maneuver = true;
                     status_changed = true;
                     _sys_id.maneuver_valid = true;
 					_sys_id.timestamp_start_maneuver = hrt_absolute_time();
+					set_attitude(0.0f, 0.0f, 0.0f, 0.0f); // roll, pitch, yaw, thrust
+					// reset_attitude_integrators();
 				}
                 if (maneuvers_finished) {
                     PX4_INFO("system identification maneuvers are finished");
@@ -494,11 +527,9 @@ void SysID::run()
 
 	orb_unsubscribe(sensor_combined_sub);
 	orb_unsubscribe(parameter_update_sub);
-	orb_unsubscribe(_vehicle_command_sub);
 	orb_unsubscribe(_vehicle_status_sub);
 	orb_unsubscribe(_virtual_actuator_sub);
 	orb_unsubscribe(_sys_id_sub);
-	orb_unsubscribe(_home_position_sub);
     orb_unsubscribe(_vehicle_local_pos_sub);
 }
 
