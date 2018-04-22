@@ -137,6 +137,7 @@ private:
 	float direction;
 	float sys_id_altitude;
     float airspeed_pitch_gain;
+    float actuator_pitch_treshold;
 
 	DEFINE_PARAMETERS(
 		(ParamInt<px4::params::SYS_AUTOSTART>) _sys_autostart,   /**< example parameter */

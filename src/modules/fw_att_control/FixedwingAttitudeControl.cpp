@@ -400,6 +400,7 @@ FixedwingAttitudeControl::vehicle_status_poll()
             _actuators_id = ORB_ID(actuator_controls_virtual_sys_id);
             _attitude_setpoint_id = ORB_ID(vehicle_attitude_setpoint);
             _actuators_0_pub = nullptr;
+            _pitch_ctrl.set_k_i(3.0f);
             /*
             _roll_ctrl.set_k_i(0);
             _pitch_ctrl.set_k_i(0);

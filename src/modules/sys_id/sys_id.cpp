@@ -282,7 +282,7 @@ void SysID::set_rates(actuator_controls_s &_actuator) {
 
 void SysID::control_pitch_throttle(float airspeed_sp) {
     _att_sp.pitch_body = (_airspeed.indicated_airspeed_m_s - airspeed_sp) * airspeed_pitch_gain;
-    PX4_INFO("pitch is equal to: %.3f", (double)_att_sp.pitch_body);
+    // PX4_INFO("pitch setpoint is equal to: %.3f", (double)_att_sp.pitch_body);
 }
 
 void SysID::run()
@@ -329,6 +329,7 @@ void SysID::run()
 	sys_id_altitude = 50.0f;
     direction = 20.0f;
 	airspeed_pitch_gain = 5;
+    actuator_pitch_treshold = 0.45f;
 
 	bool get_new_maneuver = false;
     bool all_maneuvers_finished = false;
@@ -410,10 +411,14 @@ void SysID::run()
 							break;
 
 						case system_identification_s::MODE_FIXED_PITCH:
-                            control_pitch_throttle(20.0f-(float)iteration);
+                            control_pitch_throttle(16.0f-(float)iteration);
                             set_attitude(_att_sp);
 							set_rates(_virtual_actuator);
-                            // maneuver_finished = true;
+                            if (_virtual_actuator.control[actuator_controls_s::INDEX_PITCH] > actuator_pitch_treshold &&
+                                    !maneuver_finished) {
+                                maneuver_finished = true;
+                                PX4_INFO("exiting maneuver %d", system_identification_s::MODE_FIXED_PITCH);
+                            }
 							break;
 
 						case system_identification_s::MODE_FIXED_ELEVATOR:
