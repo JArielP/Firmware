@@ -32,6 +32,7 @@
  ****************************************************************************/
 
 #include <lib/mathlib/math/Vector.hpp>
+// #include <uORB/topics/vehicle_status.h>
 #include "FixedwingPositionControl.hpp"
 
 extern "C" __EXPORT int fw_pos_control_l1_main(int argc, char *argv[]);
@@ -1856,7 +1857,7 @@ FixedwingPositionControl::tecs_update_pitch_throttle(float alt_sp, float airspee
 				    _control_mode.flag_control_velocity_enabled ||
 				    _control_mode.flag_control_altitude_enabled));
 
-	/* update TECS vehicle state estimates */				// TODO: Hack for vertical velocity state?
+	/* update TECS vehicle state estimates */
 	_tecs.update_vehicle_state_estimates(_airspeed, _R_nb,
 					     accel_body, (_global_pos.timestamp > 0), in_air_alt_control,
 					     _global_pos.alt, _local_pos.v_z_valid, _local_pos.vz, _local_pos.az);

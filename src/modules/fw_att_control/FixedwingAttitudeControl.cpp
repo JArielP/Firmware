@@ -214,29 +214,37 @@ FixedwingAttitudeControl::parameters_update()
 	/* pitch control parameters */
 	_pitch_ctrl.set_time_constant(_parameters.p_tc);
 	_pitch_ctrl.set_k_p(_parameters.p_p);
-	_pitch_ctrl.set_k_i(_parameters.p_i);
+    if (!_vehicle_status.in_sys_id_maneuver) {
+        _pitch_ctrl.set_k_i(_parameters.p_i);
+    }
 	_pitch_ctrl.set_k_ff(_parameters.p_ff);
 	_pitch_ctrl.set_integrator_max(_parameters.p_integrator_max);
 
-	/* roll control parameters */
-	_roll_ctrl.set_time_constant(_parameters.r_tc);
-	_roll_ctrl.set_k_p(_parameters.r_p);
-	_roll_ctrl.set_k_i(_parameters.r_i);
-	_roll_ctrl.set_k_ff(_parameters.r_ff);
-	_roll_ctrl.set_integrator_max(_parameters.r_integrator_max);
+    /* roll control parameters */
+    _roll_ctrl.set_time_constant(_parameters.r_tc);
+    _roll_ctrl.set_k_p(_parameters.r_p);
+    if (!_vehicle_status.in_sys_id_maneuver) {
+        _roll_ctrl.set_k_i(_parameters.r_i);
+    }
+    _roll_ctrl.set_k_ff(_parameters.r_ff);
+    _roll_ctrl.set_integrator_max(_parameters.r_integrator_max);
 
-	/* yaw control parameters */
-	_yaw_ctrl.set_k_p(_parameters.y_p);
-	_yaw_ctrl.set_k_i(_parameters.y_i);
-	_yaw_ctrl.set_k_ff(_parameters.y_ff);
-	_yaw_ctrl.set_integrator_max(_parameters.y_integrator_max);
+    /* yaw control parameters */
+    _yaw_ctrl.set_k_p(_parameters.y_p);
+    if (!_vehicle_status.in_sys_id_maneuver) {
+        _yaw_ctrl.set_k_i(_parameters.y_i);
+    }
+    _yaw_ctrl.set_k_ff(_parameters.y_ff);
+    _yaw_ctrl.set_integrator_max(_parameters.y_integrator_max);
 
-	/* wheel control parameters */
-	_wheel_ctrl.set_k_p(_parameters.w_p);
-	_wheel_ctrl.set_k_i(_parameters.w_i);
-	_wheel_ctrl.set_k_ff(_parameters.w_ff);
-	_wheel_ctrl.set_integrator_max(_parameters.w_integrator_max);
-	_wheel_ctrl.set_max_rate(math::radians(_parameters.w_rmax));
+    /* wheel control parameters */
+    _wheel_ctrl.set_k_p(_parameters.w_p);
+    if (!_vehicle_status.in_sys_id_maneuver) {
+        _wheel_ctrl.set_k_i(_parameters.w_i);
+    }
+    _wheel_ctrl.set_k_ff(_parameters.w_ff);
+    _wheel_ctrl.set_integrator_max(_parameters.w_integrator_max);
+    _wheel_ctrl.set_max_rate(math::radians(_parameters.w_rmax));
 
 	return PX4_OK;
 }
@@ -378,28 +386,46 @@ FixedwingAttitudeControl::vehicle_status_poll()
 				_parameter_handles.vtol_type = param_find("VT_TYPE");
 
 				parameters_update();
-                PX4_INFO("Publishing onto vtol acctuator topic");
+                // PX4_INFO("Publishing onto vtol acctuator topic");
 
 			} else {
 				_rates_sp_id = ORB_ID(vehicle_rates_setpoint);
 				_actuators_id = ORB_ID(actuator_controls_0);
 				_attitude_setpoint_id = ORB_ID(vehicle_attitude_setpoint);
-                PX4_INFO("Publishing onto normal acctuator topic");
+                // PX4_INFO("Publishing onto normal acctuator topic");
 			}
 		}
 		if (_vehicle_status.in_sys_id_maneuver && _actuators_id != ORB_ID(actuator_controls_virtual_sys_id)) {
-			_rates_sp_id = ORB_ID(vehicle_rates_setpoint);
-			_actuators_id = ORB_ID(actuator_controls_virtual_sys_id);
-			_attitude_setpoint_id = ORB_ID(vehicle_attitude_setpoint);
-			PX4_INFO("Publishing onto sys_id acctuator topic");
-		}
-		else if (!_vehicle_status.in_sys_id_maneuver && _actuators_id != ORB_ID(actuator_controls_0)) {
-			_rates_sp_id = ORB_ID(vehicle_rates_setpoint);
+            _rates_sp_id = ORB_ID(vehicle_rates_setpoint);
+            _actuators_id = ORB_ID(actuator_controls_virtual_sys_id);
+            _attitude_setpoint_id = ORB_ID(vehicle_attitude_setpoint);
+            _actuators_0_pub = nullptr;
+            /*
+            _roll_ctrl.set_k_i(0);
+            _pitch_ctrl.set_k_i(0);
+            _yaw_ctrl.set_k_i(0);
+            _wheel_ctrl.set_k_i(0);
+            */
+            // PX4_INFO("Publishing onto sys_id actuator topic");
+
+        } else if (!_vehicle_status.in_sys_id_maneuver && _actuators_id != ORB_ID(actuator_controls_0)) {
+            _rates_sp_id = ORB_ID(vehicle_rates_setpoint);
 			_actuators_id = ORB_ID(actuator_controls_0);
 			_attitude_setpoint_id = ORB_ID(vehicle_attitude_setpoint);
-			PX4_INFO("Publishing onto normal acctuator topic");
-		}
-	}
+            _actuators_0_pub = nullptr;
+
+            _pitch_ctrl.set_k_i(_parameters.p_i);
+            _roll_ctrl.set_k_i(_parameters.r_i);
+            _yaw_ctrl.set_k_i(_parameters.y_i);
+            _wheel_ctrl.set_k_i(_parameters.w_i);
+
+            _roll_ctrl.reset_integrator();
+            _pitch_ctrl.reset_integrator();
+            _yaw_ctrl.reset_integrator();
+            _wheel_ctrl.reset_integrator();
+            // PX4_INFO("Publishing onto normal actuator topic");
+        }
+    }
 }
 
 void
@@ -859,6 +885,7 @@ void FixedwingAttitudeControl::run()
 			_actuators_airframe.timestamp_sample = _att.timestamp;
 
 			/* Only publish if any of the proper modes are enabled */
+            // TODO: publish onto right acutator group, when in sys_id mode.
 			if (_vcontrol_mode.flag_control_rates_enabled ||
 			    _vcontrol_mode.flag_control_attitude_enabled ||
 			    _vcontrol_mode.flag_control_manual_enabled) {

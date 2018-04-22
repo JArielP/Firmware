@@ -47,6 +47,7 @@
 #include <uORB/topics/home_position.h>
 #include <uORB/topics/position_setpoint.h>
 #include <uORB/topics/vehicle_local_position.h>
+#include <uORB/topics/airspeed.h>
 
 using matrix::Eulerf;
 using matrix::Quatf;
@@ -90,22 +91,21 @@ private:
 
 	void set_vehicle_status();
 	void set_rates(actuator_controls_s &_actuator);
-	void set_attitude(float roll, float pitch, float yaw, float thrust);
-    void reset_attitude_integrators();
+	void set_attitude(vehicle_attitude_setpoint_s &_att_sp);
 	void set_sys_id_topic();
-
-    void reset_attitude_integrators(bool roll, bool pitch, bool yaw);
 
 	int _vehicle_status_sub{-1};
     int _virtual_actuator_sub{-1};
 	int _sys_id_sub{-1};
     int _vehicle_local_pos_sub{-1};
+    int _airspeed_sub{-1};
 
 	vehicle_status_s _vehicle_status {};
     actuator_controls_s _virtual_actuator {};
     system_identification_s _sys_id {};
-	home_position_s _home_position {};
     vehicle_local_position_s _vehicle_local_pos {};
+    airspeed_s _airspeed{};
+    vehicle_attitude_setpoint_s _att_sp{};
 
 	orb_advert_t	_actuators_0_pub{nullptr};		/**< actuator control group 0 setpoint */
 	orb_id_t 		_actuators_id{nullptr};	// pointer to correct actuator controls0 uORB metadata structure
@@ -126,13 +126,9 @@ private:
 	void actuator_poll();
 	void sys_id_poll();
     void vehicle_local_pos_poll();
+    void airspeed_poll();
 
-    bool get_new_maneuver;
-
-	position_setpoint_s _pos_sp_0 {};
-	position_setpoint_s _pos_sp_1 {};
-	position_setpoint_s _pos_sp_2 {};
-	position_setpoint_s _pos_sp_3 {};
+    void control_pitch_throttle(float airspeed_sp);
 
     //TODO: put into parameters:
     uint8_t sys_id_modes;
@@ -140,8 +136,7 @@ private:
     float activate_time;
 	float direction;
 	float sys_id_altitude;
-
-
+    float airspeed_pitch_gain;
 
 	DEFINE_PARAMETERS(
 		(ParamInt<px4::params::SYS_AUTOSTART>) _sys_autostart,   /**< example parameter */
