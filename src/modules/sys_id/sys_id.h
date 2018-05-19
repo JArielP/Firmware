@@ -55,6 +55,8 @@ using matrix::Quatf;
 extern "C" __EXPORT int sys_id_main(int argc, char *argv[]);
 
 
+class SID_TIME;
+
 class SysID : public ModuleBase<SysID>, public ModuleParams
 {
 public:
@@ -82,13 +84,6 @@ public:
 
 private:
 
-	/**
-	 * Check for parameter changes and update them if needed.
-	 * @param parameter_update_sub uorb subscription to parameter_update
-	 * @param force for a parameter update
-	 */
-	void parameters_update(int parameter_update_sub, bool force = false);
-
 	void set_vehicle_status();
 	void set_rates(actuator_controls_s &_actuator);
 	void set_attitude(vehicle_attitude_setpoint_s &_att_sp);
@@ -99,6 +94,7 @@ private:
 	int _sys_id_sub{-1};
     int _vehicle_local_pos_sub{-1};
     int _airspeed_sub{-1};
+    int _params_sub{-1};
 
 	vehicle_status_s _vehicle_status {};
     actuator_controls_s _virtual_actuator {};
@@ -128,20 +124,28 @@ private:
     void vehicle_local_pos_poll();
     void airspeed_poll();
 
-    void control_pitch_throttle(float airspeed_sp);
+    void control_pitch_aspeed(float airspeed_sp);
 
-    //TODO: put into parameters:
-    uint8_t sys_id_modes;
-    float tirm_time;
-    float activate_time;
-	float direction;
-	float sys_id_altitude;
-    float airspeed_pitch_gain;
-    float actuator_pitch_treshold;
+    /**
+     * Check for parameter changes and update them if needed.
+     * @param parameter_update_sub uorb subscription to parameter_update
+     * @param force for a parameter update
+     */
+    void parameters_update(int parameter_update_sub, bool force = false);
 
 	DEFINE_PARAMETERS(
-		(ParamInt<px4::params::SYS_AUTOSTART>) _sys_autostart,   /**< example parameter */
-		(ParamInt<px4::params::SYS_AUTOCONFIG>) _sys_autoconfig  /**< another parameter */
+            (ParamInt<px4::params::SID_MODES>) sys_id_modes,                  /**< example parameter */
+            (ParamFloat<px4::params::SID_DIR>) direction,                     /**< example parameter */
+            (ParamFloat<px4::params::SID_1_A_PP>) airspeed_pitch_gain,        /**< example parameter */
+            (ParamFloat<px4::params::SID_ELEV_TH>) actuator_pitch_treshold,   /**< example parameter */
+            (ParamFloat<px4::params::SID_TIME>) time,                         /**< example parameter */
+            (ParamFloat<px4::params::SID_1_ASP_SART>) airspeed_start,         /**< example parameter */
+            (ParamFloat<px4::params::SID_1_ASP_STEP>) step,                   /**< example parameter */
+            (ParamFloat<px4::params::SID_ALT_START>) altitude_start,          /**< example parameter */
+            (ParamFloat<px4::params::SID_ALT_STOP>) altitude_stop,            /**< example parameter */
+			(ParamFloat<px4::params::SID_1_PITCH_MAX>) pitch_max,             /**< example parameter */
+			(ParamFloat<px4::params::SID_1_PITCH_MIN>) pitch_min,             /**< example parameter */
+			(ParamFloat<px4::params::SID_1_AOA_MAX>) aoa_max                  /**< example parameter */
 	)
 };
 

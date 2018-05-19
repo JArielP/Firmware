@@ -1,6 +1,6 @@
 ############################################################################
 #
-#   Copyright (c) 2018 PX4 Development Team. All rights reserved.
+#   Copyright (C) 2016  Intel Corporation. All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -30,15 +30,14 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 ############################################################################
-
 px4_add_module(
-	MODULE templates__module
-	MAIN module
-	STACK_MAIN 1024
-	SRCS
-		module.cpp
-	DEPENDS
-		platforms__common
-		modules__uORB
-	)
-
+		MODULE drivers__aoas
+		MAIN aoas
+		COMPILE_FLAGS
+			-Os
+		SRCS
+			aoas.cpp
+		DEPENDS
+			platforms__common
+)
+# vim: set noet ft=cmake fenc=utf-8 ff=unix :

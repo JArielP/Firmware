@@ -70,6 +70,11 @@ fi
 
 if ver hwcmp PX4FMU_V2
 then
+    # start the angle of attack sensor driver
+	if aoas start
+	then
+	fi
+
 	# V2 build hwtypecmp is always false
 	set BOARD_FMUV3 0
 
@@ -165,6 +170,7 @@ then
 		l3gd20 start
 		lsm303d start
 	fi
+
 
 	unset BOARD_FMUV3
 fi

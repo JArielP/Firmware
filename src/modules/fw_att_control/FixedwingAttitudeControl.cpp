@@ -400,13 +400,16 @@ FixedwingAttitudeControl::vehicle_status_poll()
             _actuators_id = ORB_ID(actuator_controls_virtual_sys_id);
             _attitude_setpoint_id = ORB_ID(vehicle_attitude_setpoint);
             _actuators_0_pub = nullptr;
-            _pitch_ctrl.set_k_i(3.0f);
-            /*
+            //_pitch_ctrl.set_k_i(3.0f);
             _roll_ctrl.set_k_i(0);
             _pitch_ctrl.set_k_i(0);
             _yaw_ctrl.set_k_i(0);
             _wheel_ctrl.set_k_i(0);
-            */
+
+            _roll_ctrl.reset_integrator();
+            _pitch_ctrl.reset_integrator();
+            _yaw_ctrl.reset_integrator();
+            _wheel_ctrl.reset_integrator();
             // PX4_INFO("Publishing onto sys_id actuator topic");
 
         } else if (!_vehicle_status.in_sys_id_maneuver && _actuators_id != ORB_ID(actuator_controls_0)) {

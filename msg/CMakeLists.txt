@@ -88,7 +88,7 @@ set(msg_files
 	safety.msg
 	satellite_info.msg
 	sensor_accel.msg
-	sensor_aoas.msg
+		angle_of_attack.msg
 	sensor_baro.msg
 	sensor_bias.msg
 	sensor_combined.msg

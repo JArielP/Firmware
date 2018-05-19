@@ -609,6 +609,7 @@ void Logger::add_default_topics()
 	add_topic("rate_ctrl_status", 30);
 	add_topic("safety");
 	add_topic("sensor_combined", 100);
+//	add_topic("angle_of_attack", 100);
 	add_topic("sensor_preflight", 200);
 	add_topic("system_power", 500);
 	add_topic("tecs_status", 200);
@@ -628,6 +629,13 @@ void Logger::add_default_topics()
 	add_topic("vehicle_vision_position");
 	add_topic("vtol_vehicle_status", 200);
 	add_topic("wind_estimate", 200);
+
+    // for system id need to log imu and controls at full rate
+    add_topic("actuator_controls_0");
+//	add_topic("actuator_controls_1");
+    add_topic("sensor_combined");
+    add_topic("angle_of_attack");
+    add_topic("system_identification");
 
 #ifdef CONFIG_ARCH_BOARD_SITL
 	add_topic("actuator_armed");
@@ -709,8 +717,9 @@ void Logger::add_system_identification_topics()
 {
 	// for system id need to log imu and controls at full rate
 	add_topic("actuator_controls_0");
-	add_topic("actuator_controls_1");
+//	add_topic("actuator_controls_1");
 	add_topic("sensor_combined");
+	add_topic("angle_of_attack");
 	add_topic("system_identification");
 }
 
