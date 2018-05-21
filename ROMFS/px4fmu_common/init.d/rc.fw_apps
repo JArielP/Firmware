@@ -19,9 +19,14 @@ ekf2 start
 #
 # Start attitude controller
 #
+sys_id start
 fw_att_control start
 fw_pos_control_l1 start
-sys_id start
+
+#
+# Start aoa sensor
+#
+aoas start
 
 #
 # Start Land Detector

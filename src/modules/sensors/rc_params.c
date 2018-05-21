@@ -1525,7 +1525,7 @@ PARAM_DEFINE_INT32(RC_MAP_ACRO_SW, 0);
  * @value 17 Channel 17
  * @value 18 Channel 18
  */
-PARAM_DEFINE_INT32(RC_MAP_SYSID_SW, 7);
+PARAM_DEFINE_INT32(RC_MAP_SYSID_SW, 8);
 
 /**
  * Offboard switch channel

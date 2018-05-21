@@ -239,6 +239,7 @@ void SysID::set_vehicle_status() {
 }
 
 void SysID::set_sys_id_topic() {
+    _sys_id.timestamp = hrt_absolute_time();
     if (_sys_id_pub != nullptr) {
         orb_publish(_sys_id_id, _sys_id_pub, &_sys_id);
 

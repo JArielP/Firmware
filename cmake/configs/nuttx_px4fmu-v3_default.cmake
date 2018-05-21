@@ -20,6 +20,7 @@ set(config_module_list
 	drivers/telemetry
 
 	drivers/airspeed
+	drivers/aoas
 	drivers/batt_smbus
 	drivers/blinkm
 	drivers/boards
@@ -99,6 +100,7 @@ set(config_module_list
 	modules/mavlink
 	modules/navigator
 	modules/uavcan
+	modules/sys_id
 
 	#
 	# Estimation modules
