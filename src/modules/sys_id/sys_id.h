@@ -38,6 +38,7 @@
 #include <geo/geo.h>
 #include <drivers/drv_hrt.h>
 #include <mathlib/mathlib.h>
+#include <systemlib/mavlink_log.h>
 #include <uORB/uORB.h>
 #include <uORB/topics/system_identification.h>
 #include <uORB/topics/vehicle_command.h>
@@ -117,6 +118,8 @@ private:
     //TODO: change description
     orb_advert_t	_sys_id_pub{nullptr};		/**< actuator control group 0 setpoint */
     orb_id_t 		_sys_id_id{nullptr};	// pointer to correct actuator controls0 uORB metadata structure
+
+	orb_advert_t	_mavlink_log_pub{nullptr};		/**< actuator control group 0 setpoint */
 
 	void vehicle_status_poll();
 	void actuator_poll();

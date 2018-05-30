@@ -283,7 +283,7 @@ void SysID::set_rates(actuator_controls_s &_actuator) {
 
 void SysID::control_pitch_aspeed(float airspeed_sp) {
     _att_sp.pitch_body = (_airspeed.indicated_airspeed_m_s - airspeed_sp) * airspeed_pitch_gain.get();
-    PX4_INFO("attitude setpoint pitch %0.3f",(double)_att_sp.pitch_body);
+    // PX4_INFO("attitude setpoint pitch %0.3f",(double)_att_sp.pitch_body);
 	// check if attitude setpoint is bigger than 5deg or smaller than 10deg:
 	if (_att_sp.pitch_body < pitch_min.get()) {
 		_att_sp.pitch_body = pitch_min.get();
@@ -342,6 +342,7 @@ void SysID::run()
 	bool get_new_maneuver = false;
     bool all_maneuvers_finished = false;
     bool maneuver_finished = true;
+    bool sys_id_reset = false;
 
     int iteration = 0;
 
@@ -378,168 +379,197 @@ void SysID::run()
             vehicle_local_pos_poll();
 			airspeed_poll();
 
-			if (_vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_SYSID && !all_maneuvers_finished) {
-				if (!_vehicle_status.in_sys_id_maneuver) {
-                    /* evalueates the condition for a new maneuver
-                     * if there is no more maneuver to fly, it will stay in the first loop
-                     */
-                    math::Vector<2> bearing(_vehicle_local_pos.vx, _vehicle_local_pos.vy);
-                    bearing.normalize();
-                    math::Vector<2> target_bearing(cosf(math::radians(direction.get())), sinf(math::radians(direction.get())));
+			if (_vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_SYSID) {
+			    if (sys_id_reset) {
+                    _sys_id.mode = 0;
+                    get_new_maneuver = false;
+                    sys_id_reset = false;
+                    all_maneuvers_finished = false;
+                    maneuver_finished = true;
+			    }
+                if (!all_maneuvers_finished) {
+                    if (!_vehicle_status.in_sys_id_maneuver) {
+                        /* evalueates the condition for a new maneuver
+                         * if there is no more maneuver to fly, it will stay in the first loop
+                         */
+                        math::Vector<2> bearing(_vehicle_local_pos.vx, _vehicle_local_pos.vy);
+                        bearing.normalize();
+                        math::Vector<2> target_bearing(cosf(math::radians(direction.get())),
+                                                       sinf(math::radians(direction.get())));
 
-                    if (_vehicle_local_pos.z < -altitude_start.get() && target_bearing * bearing > 0.98f) {
-                        if (maneuver_finished) {
-                            get_new_maneuver = true;
-                            PX4_INFO("getting new mode");
-                        } else {
-                            /*
-                             * initialize sys_id maneuver
-                             */
-                            get_new_maneuver = false;
-                            maneuver_finished = false;
-                            iteration++;
-                            _vehicle_status.in_sys_id_maneuver = true;
+                        if (_vehicle_local_pos.z < -altitude_start.get() && target_bearing * bearing > 0.98f) {
+                            if (maneuver_finished) {
+                                get_new_maneuver = true;
+                                mavlink_log_critical(&_mavlink_log_pub, "[sys_id] getting new mode");
+                                iteration = 0;
+                            } else {
+                                /*
+                                 * initialize sys_id maneuver
+                                 */
+                                get_new_maneuver = false;
+                                maneuver_finished = false;
+                                iteration++;
+                                _vehicle_status.in_sys_id_maneuver = true;
+                                status_changed = true;
+                                _sys_id.maneuver_valid = true;
+                                _sys_id.timestamp_start_maneuver = hrt_absolute_time();
+                                _att_sp.roll_body = 0.0f;
+                                _att_sp.pitch_body = 0.0f;
+                                _att_sp.yaw_body = 0.0f;
+                                _att_sp.thrust = 0.0f;
+                                set_attitude(_att_sp); // roll, pitch, yaw, thrust
+                                mavlink_log_critical(&_mavlink_log_pub, "[sys_id] stay in same mode");
+                            }
+                        }
+
+                    } else {
+                        // TODO elaborate sys_id modes
+                        switch (_sys_id.mode) {
+                            case system_identification_s::MODE_NONE:
+                                get_new_maneuver = true;
+                                break;
+
+                            case system_identification_s::MODE_FIXED_PITCH:
+                                control_pitch_aspeed(airspeed_start.get() - (float) iteration * step.get());
+                                set_attitude(_att_sp);
+                                set_rates(_virtual_actuator);
+                                // conditon for exiting the sys_id mode:
+                                if ((_virtual_actuator.control[actuator_controls_s::INDEX_PITCH] >
+                                     actuator_pitch_treshold.get() ||
+                                     _virtual_actuator.control[actuator_controls_s::INDEX_PITCH] <
+                                     -actuator_pitch_treshold.get()) && !maneuver_finished) {
+                                    maneuver_finished = true;
+                                    mavlink_log_critical(&_mavlink_log_pub,
+                                                         "[sys_id] ex maneuver %d bcs acctuator_elev > %0.2f",
+                                                         system_identification_s::MODE_FIXED_PITCH,
+                                                         (double) actuator_pitch_treshold.get());
+                                } else if (_att_sp.pitch_body >= pitch_max.get() && !maneuver_finished) {
+                                    maneuver_finished = true;
+                                    mavlink_log_critical(&_mavlink_log_pub,
+                                                         "[sys_id] ex maneuver %d bcs ptich_body > %0.2f",
+                                                         system_identification_s::MODE_FIXED_PITCH,
+                                                         (double) pitch_max.get());
+                                } else if (iteration > 2 && !maneuver_finished) {
+                                    maneuver_finished = true;
+                                    mavlink_log_critical(&_mavlink_log_pub,
+                                                         "[sys_id] ex maneuver %d bcs iteration > %d",
+                                                         system_identification_s::MODE_FIXED_PITCH,
+                                                         2);
+                                }
+                                break;
+
+                            case system_identification_s::MODE_FIXED_ELEVATOR:
+                                set_attitude(_att_sp);
+                                set_rates(_virtual_actuator);
+                                maneuver_finished = true;
+                                break;
+
+                            case system_identification_s::MODE_211_ROLL:
+                                set_attitude(_att_sp);
+                                if (hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) > 2000000 &&
+                                    hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) < 4000000) {
+                                    _virtual_actuator.timestamp = hrt_absolute_time();
+                                    _virtual_actuator.control[actuator_controls_s::INDEX_ROLL] = 0.1f;
+                                } else if (hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) > 4000000 &&
+                                           hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) < 5000000) {
+                                    _virtual_actuator.timestamp = hrt_absolute_time();
+                                    _virtual_actuator.control[actuator_controls_s::INDEX_ROLL] = -0.1f;
+                                } else if (hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) > 5000000 &&
+                                           hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) < 6000000) {
+                                    _virtual_actuator.timestamp = hrt_absolute_time();
+                                    _virtual_actuator.control[actuator_controls_s::INDEX_ROLL] = 0.1f;
+                                } else if (hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) > 6000000 &&
+                                           hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) < 8000000) {
+                                    _virtual_actuator.timestamp = hrt_absolute_time();
+                                    _virtual_actuator.control[actuator_controls_s::INDEX_ROLL] = 0.0f;
+                                }
+                                set_rates(_virtual_actuator);
+                                maneuver_finished = true;
+                                break;
+
+                            case system_identification_s::MODE_211_PITCH:
+                                set_attitude(_att_sp);
+                                set_rates(_virtual_actuator);
+                                maneuver_finished = true;
+                                break;
+
+                            case system_identification_s::MODE_211_YAW:
+                                set_attitude(_att_sp);
+                                set_rates(_virtual_actuator);
+                                maneuver_finished = true;
+                                break;
+
+                            default:
+                                break;
+                        }
+                        /*
+                         * conditions to end the one maneuver
+                         */
+                        if (hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) >
+                            (uint) (time.get() * 1000000.0f)) { // time for maneuver: 20s
+                            _vehicle_status.in_sys_id_maneuver = false; // resets the integrators of attitude controller!
                             status_changed = true;
-                            _sys_id.maneuver_valid = true;
-                            _sys_id.timestamp_start_maneuver = hrt_absolute_time();
-                            _att_sp.roll_body = 0.0f;
-                            _att_sp.pitch_body = 0.0f;
-                            _att_sp.yaw_body = 0.0f;
-                            _att_sp.thrust = 0.0f;
-                            set_attitude(_att_sp); // roll, pitch, yaw, thrust
-
-                            PX4_INFO("stays in same mode");
+                        } else if (-_vehicle_local_pos.z < altitude_stop.get()) { //TODO: check for body roll
+                            _vehicle_status.in_sys_id_maneuver = false; // resets the integrators of attitude controller!
+                            status_changed = true;
                         }
                     }
 
-				} else {
-					// TODO elaborate sys_id modes
-					switch (_sys_id.mode) {
-						case system_identification_s::MODE_NONE:
-							get_new_maneuver = true;
-							break;
-
-						case system_identification_s::MODE_FIXED_PITCH:
-                            control_pitch_aspeed(airspeed_start.get()-(float)iteration*step.get());
-                            set_attitude(_att_sp);
-							set_rates(_virtual_actuator);
-                            // conditon for exiting the sys_id mode:
-                            if ((_virtual_actuator.control[actuator_controls_s::INDEX_PITCH] > actuator_pitch_treshold.get() ||
-                                 _att_sp.pitch_body >= pitch_max.get()) &&
-                                 !maneuver_finished) {
-                                maneuver_finished = true;
-                                PX4_INFO("exiting maneuver %d", system_identification_s::MODE_FIXED_PITCH);
-                            }
-							break;
-
-						case system_identification_s::MODE_FIXED_ELEVATOR:
-                            set_attitude(_att_sp);
-							set_rates(_virtual_actuator);
-                            maneuver_finished = true;
-							break;
-
-						case system_identification_s::MODE_211_ROLL:
-                            set_attitude(_att_sp);
-                            if (hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) > 2000000 &&
-                                hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) < 4000000) {
-                                _virtual_actuator.timestamp = hrt_absolute_time();
-                                _virtual_actuator.control[actuator_controls_s::INDEX_ROLL] = 0.1f;
-                            }
-                            else if (hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) > 4000000 &&
-                                     hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) < 5000000) {
-                                _virtual_actuator.timestamp = hrt_absolute_time();
-                                _virtual_actuator.control[actuator_controls_s::INDEX_ROLL] = -0.1f;
-                            }
-                            else if (hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) > 5000000 &&
-                                     hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) < 6000000) {
-                                _virtual_actuator.timestamp = hrt_absolute_time();
-                                _virtual_actuator.control[actuator_controls_s::INDEX_ROLL] = 0.1f;
-                            }
-                            else if (hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) > 6000000 &&
-                                     hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) < 8000000) {
-                                _virtual_actuator.timestamp = hrt_absolute_time();
-                                _virtual_actuator.control[actuator_controls_s::INDEX_ROLL] = 0.0f;
-                            }
-							set_rates(_virtual_actuator);
-                            maneuver_finished = true;
-							break;
-
-						case system_identification_s::MODE_211_PITCH:
-                            set_attitude(_att_sp);
-							set_rates(_virtual_actuator);
-                            maneuver_finished = true;
-							break;
-
-						case system_identification_s::MODE_211_YAW:
-                            set_attitude(_att_sp);
-							set_rates(_virtual_actuator);
-                            maneuver_finished = true;
-							break;
-
-						default:
-							break;
-					}
-                    /*
-                     * conditions to end the one maneuver
+                    /* reads out the new maneuver
+                     * stops the system identification process if there are no more maneuver to be done
                      */
-					if (hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) > (uint)(time.get()*1000000.0f)) { // time for maneuver: 20s
-						_vehicle_status.in_sys_id_maneuver = false; // resets the integrators of attitude controller!
+                    uint8_t old_mode = _sys_id.mode;
+                    if (get_new_maneuver) {
+                        /* decide witch sys_id maneuver to run
+                         * with a bitmask
+                         */
+                        if (_sys_id.mode == 0) {
+                            _sys_id.mode = 1;
+                        }
+                        while (!((sys_id_modes.get() & _sys_id.mode * 2) == _sys_id.mode * 2) &&
+                               _sys_id.mode < system_identification_s::MODE_MAX) {
+                            _sys_id.mode *= 2;
+                        }
+                        if (_sys_id.mode == system_identification_s::MODE_MAX) {
+                            _vehicle_status.in_sys_id_maneuver = false;
+                            status_changed = true;
+                            all_maneuvers_finished = true;
+                        } else {
+                            _sys_id.mode = _sys_id.mode * 2;
+                        }
+                    }
+                    if (old_mode != _sys_id.mode) {
+                        /*
+                         * initialize sys_id mode
+                         */
+                        mavlink_log_critical(&_mavlink_log_pub, "[sys_id] starting system identification mode %d",
+                                             _sys_id.mode);
+                        get_new_maneuver = false;
+                        maneuver_finished = false;
+                        _vehicle_status.in_sys_id_maneuver = true;
                         status_changed = true;
-					} else if (-_vehicle_local_pos.z < altitude_stop.get()) { //TODO: check for body roll
-                        _vehicle_status.in_sys_id_maneuver = false; // resets the integrators of attitude controller!
+                        _sys_id.maneuver_valid = true;
+                        _sys_id.timestamp_start_maneuver = hrt_absolute_time();
+                        _att_sp.roll_body = 0.0f;
+                        _att_sp.pitch_body = 0.0f;
+                        _att_sp.yaw_body = 0.0f;
+                        _att_sp.thrust = 0.0f;
+                        set_attitude(_att_sp);
+                        // reset_attitude_integrators();
+                    }
+                    if (all_maneuvers_finished) {
+                        mavlink_log_critical(&_mavlink_log_pub,
+                                             "[sys_id] system identification maneuvers finished");
+                        _vehicle_status.in_sys_id_maneuver = false;
                         status_changed = true;
                     }
-				}
-
-				/* reads out the new maneuver
-				 * stops the system identification process if there are no more maneuver to be done
-				 */
-				uint8_t old_mode = _sys_id.mode;
-				if (get_new_maneuver) {
-					/* decide witch sys_id maneuver to run
-                     * with a bitmask
-                     */
-					if (_sys_id.mode == 0) {
-						_sys_id.mode = 1;
-					}
-					while (!((sys_id_modes.get() & _sys_id.mode * 2) == _sys_id.mode * 2) &&
-						   _sys_id.mode < system_identification_s::MODE_MAX) {
-						_sys_id.mode *= 2;
-					}
-					if (_sys_id.mode == system_identification_s::MODE_MAX) {
-						_vehicle_status.in_sys_id_maneuver = false;
-                        status_changed = true;
-                        all_maneuvers_finished = true;
-					} else {
-						_sys_id.mode = _sys_id.mode * 2;
-					}
-				}
-				if (old_mode != _sys_id.mode) {
-                    /*
-                     * initialize sys_id mode
-                     */
-                    PX4_INFO("starting system identification mode %d", _sys_id.mode);
-					get_new_maneuver = false;
-                    maneuver_finished = false;
-					_vehicle_status.in_sys_id_maneuver = true;
-                    status_changed = true;
-                    _sys_id.maneuver_valid = true;
-					_sys_id.timestamp_start_maneuver = hrt_absolute_time();
-                    _att_sp.roll_body = 0.0f;
-                    _att_sp.pitch_body = 0.0f;
-                    _att_sp.yaw_body = 0.0f;
-                    _att_sp.thrust = 0.0f;
-                    set_attitude(_att_sp);
-					// reset_attitude_integrators();
-				}
-                if (all_maneuvers_finished) {
-                    PX4_INFO("system identification maneuvers are finished");
-                    _vehicle_status.in_sys_id_maneuver = false;
-                    status_changed = true;
+                    if (status_changed) {
+                        set_vehicle_status();
+                    }
                 }
-                if (status_changed) {
-                    set_vehicle_status();
-                }
+            }
+            else {
+			    sys_id_reset = true;
 			}
             set_sys_id_topic();
 		}

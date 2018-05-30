@@ -111,7 +111,7 @@ PARAM_DEFINE_FLOAT(SID_TIME, 20);
  * @min 0
  * @max 50
  */
-PARAM_DEFINE_FLOAT(SID_1_A_PP, 0);
+PARAM_DEFINE_FLOAT(SID_1_A_PP, 1);
 
 /**
  * Airspeed Start
