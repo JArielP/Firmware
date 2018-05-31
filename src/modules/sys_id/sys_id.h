@@ -148,7 +148,8 @@ private:
             (ParamFloat<px4::params::SID_ALT_STOP>) altitude_stop,            /**< example parameter */
 			(ParamFloat<px4::params::SID_1_PITCH_MAX>) pitch_max,             /**< example parameter */
 			(ParamFloat<px4::params::SID_1_PITCH_MIN>) pitch_min,             /**< example parameter */
-			(ParamFloat<px4::params::SID_1_AOA_MAX>) aoa_max                  /**< example parameter */
+			(ParamFloat<px4::params::SID_1_AOA_MAX>) aoa_max,                 /**< example parameter */
+            (ParamInt<px4::params::SID_1_ITER_MAX>) iter_max                /**< example parameter */
 	)
 };
 

@@ -174,6 +174,17 @@ PARAM_DEFINE_FLOAT(SID_1_PITCH_MIN, -20);
 PARAM_DEFINE_FLOAT(SID_1_AOA_MAX, 10);
 
 /**
+ * Maximal amount of iterations
+ *
+ * Defines how many iteratioions ar flown in this maneuver
+ *
+ * @group System Identification
+ * @min 0
+ * @max 50
+ */
+PARAM_DEFINE_INT32(SID_1_ITER_MAX, 10);
+
+/**
  * Altitude Stop
  *
  * @group System Identification

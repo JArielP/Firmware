@@ -44,14 +44,13 @@
 #include <uORB/topics/sensor_combined.h>
 
 
-int SysID::print_usage(const char *reason)
-{
-	if (reason) {
-		PX4_WARN("%s\n", reason);
-	}
+int SysID::print_usage(const char *reason) {
+    if (reason) {
+        PX4_WARN("%s\n", reason);
+    }
 
-	PRINT_MODULE_DESCRIPTION(
-		R"DESCR_STR(
+    PRINT_MODULE_DESCRIPTION(
+            R"DESCR_STR(
 ### Description
 Section that describes the provided module functionality.
 
@@ -66,160 +65,152 @@ $ module start -f -p 42
 
 )DESCR_STR");
 
-	PRINT_MODULE_USAGE_NAME("sys_id", "system");
-	PRINT_MODULE_USAGE_COMMAND("start");
-	PRINT_MODULE_USAGE_PARAM_FLAG('f', "Optional example flag", true);
-	PRINT_MODULE_USAGE_PARAM_INT('p', 0, 0, 1000, "Optional example parameter", true);
-	PRINT_MODULE_USAGE_DEFAULT_COMMANDS();
+    PRINT_MODULE_USAGE_NAME("sys_id", "system");
+    PRINT_MODULE_USAGE_COMMAND("start");
+    PRINT_MODULE_USAGE_PARAM_FLAG('f', "Optional example flag", true);
+    PRINT_MODULE_USAGE_PARAM_INT('p', 0, 0, 1000, "Optional example parameter", true);
+    PRINT_MODULE_USAGE_DEFAULT_COMMANDS();
 
-	return 0;
+    return 0;
 }
 
-int SysID::print_status()
-{
-	PX4_INFO("Running");
-	// TODO: print additional runtime information about the state of the module
+int SysID::print_status() {
+    PX4_INFO("Running");
+    // TODO: print additional runtime information about the state of the module
 
-	return 0;
+    return 0;
 }
 
-int SysID::custom_command(int argc, char *argv[])
-{
-	/*
-	if (!is_running()) {
-		print_usage("not running");
-		return 1;
-	}
+int SysID::custom_command(int argc, char *argv[]) {
+    /*
+    if (!is_running()) {
+        print_usage("not running");
+        return 1;
+    }
 
-	// additional custom commands can be handled like this:
-	if (!strcmp(argv[0], "do-something")) {
-		get_instance()->do_something();
-		return 0;
-	}
-	 */
+    // additional custom commands can be handled like this:
+    if (!strcmp(argv[0], "do-something")) {
+        get_instance()->do_something();
+        return 0;
+    }
+     */
 
-	return print_usage("unknown command");
+    return print_usage("unknown command");
 }
 
 
 int SysID::task_spawn(int argc, char *argv[])       // TODO: make sure task has enough RAM!
 {
-	_task_id = px4_task_spawn_cmd("module",
-				      SCHED_DEFAULT,
-				      SCHED_PRIORITY_DEFAULT,
-				      2048,
-				      (px4_main_t)&run_trampoline,
-				      (char *const *)argv);
+    _task_id = px4_task_spawn_cmd("module",
+                                  SCHED_DEFAULT,
+                                  SCHED_PRIORITY_DEFAULT,
+                                  2048,
+                                  (px4_main_t) &run_trampoline,
+                                  (char *const *) argv);
 
-	if (_task_id < 0) {
-		_task_id = -1;
-		return -errno;
-	}
+    if (_task_id < 0) {
+        _task_id = -1;
+        return -errno;
+    }
 
-	return 0;
+    return 0;
 }
 
-SysID *SysID::instantiate(int argc, char *argv[])
-{
-	int example_param = 0;
-	bool example_flag = false;
-	bool error_flag = false;
+SysID *SysID::instantiate(int argc, char *argv[]) {
+    int example_param = 0;
+    bool example_flag = false;
+    bool error_flag = false;
 
-	int myoptind = 1;
-	int ch;
-	const char *myoptarg = nullptr;
+    int myoptind = 1;
+    int ch;
+    const char *myoptarg = nullptr;
 
-	// parse CLI arguments
-	while ((ch = px4_getopt(argc, argv, "p:f", &myoptind, &myoptarg)) != EOF) {
-		switch (ch) {
-		case 'p':
-			example_param = (int)strtol(myoptarg, nullptr, 10);
-			break;
+    // parse CLI arguments
+    while ((ch = px4_getopt(argc, argv, "p:f", &myoptind, &myoptarg)) != EOF) {
+        switch (ch) {
+            case 'p':
+                example_param = (int) strtol(myoptarg, nullptr, 10);
+                break;
 
-		case 'f':
-			example_flag = true;
-			break;
+            case 'f':
+                example_flag = true;
+                break;
 
-		case '?':
-			error_flag = true;
-			break;
+            case '?':
+                error_flag = true;
+                break;
 
-		default:
-			PX4_WARN("unrecognized flag");
-			error_flag = true;
-			break;
-		}
-	}
+            default:
+                PX4_WARN("unrecognized flag");
+                error_flag = true;
+                break;
+        }
+    }
 
-	if (error_flag) {
-		return nullptr;
-	}
+    if (error_flag) {
+        return nullptr;
+    }
 
     SysID *instance = new SysID(example_param, example_flag);
 
-	if (instance == nullptr) {
-		PX4_ERR("alloc failed");
-	}
+    if (instance == nullptr) {
+        PX4_ERR("alloc failed");
+    }
 
-	return instance;
+    return instance;
 }
 
 SysID::SysID(int example_param, bool example_flag)
-	: ModuleParams(nullptr)
-{
+        : ModuleParams(nullptr) {
 }
 
 void
-SysID::vehicle_status_poll(){
-	bool updated;
+SysID::vehicle_status_poll() {
+    bool updated;
 
-	orb_check(_vehicle_status_sub, &updated);
+    orb_check(_vehicle_status_sub, &updated);
 
-	if (updated) {
-		orb_copy(ORB_ID(vehicle_status), _vehicle_status_sub, &_vehicle_status);
-	}
+    if (updated) {
+        orb_copy(ORB_ID(vehicle_status), _vehicle_status_sub, &_vehicle_status);
+    }
 }
 
 void
-SysID::actuator_poll()
-{
-	bool updated;
+SysID::actuator_poll() {
+    bool updated;
 
-	orb_check(_virtual_actuator_sub, &updated);
+    orb_check(_virtual_actuator_sub, &updated);
 
-	if (updated) {
-		orb_copy(ORB_ID(actuator_controls_virtual_sys_id), _virtual_actuator_sub, &_virtual_actuator);
-	}
+    if (updated) {
+        orb_copy(ORB_ID(actuator_controls_virtual_sys_id), _virtual_actuator_sub, &_virtual_actuator);
+    }
 }
 
 
 void
-SysID::airspeed_poll()
-{
-	bool updated;
+SysID::airspeed_poll() {
+    bool updated;
 
-	orb_check(_airspeed_sub, &updated);
+    orb_check(_airspeed_sub, &updated);
 
-	if (updated) {
-		orb_copy(ORB_ID(airspeed), _airspeed_sub, &_airspeed);
-	}
+    if (updated) {
+        orb_copy(ORB_ID(airspeed), _airspeed_sub, &_airspeed);
+    }
 }
 
 void
-SysID::sys_id_poll()
-{
-	bool updated;
+SysID::sys_id_poll() {
+    bool updated;
 
-	orb_check(_sys_id_sub, &updated);
+    orb_check(_sys_id_sub, &updated);
 
-	if (updated) {
-		orb_copy(ORB_ID(system_identification), _sys_id_sub, &_sys_id);
-	}
+    if (updated) {
+        orb_copy(ORB_ID(system_identification), _sys_id_sub, &_sys_id);
+    }
 }
 
 void
-SysID::vehicle_local_pos_poll()
-{
+SysID::vehicle_local_pos_poll() {
     bool updated;
 
     orb_check(_vehicle_local_pos_sub, &updated);
@@ -271,80 +262,71 @@ void SysID::set_attitude(vehicle_attitude_setpoint_s &att_sp) {
 }
 
 void SysID::set_rates(actuator_controls_s &_actuator) {
-	/* publish the actuator controls */
-	if (_actuators_0_pub != nullptr) {
-		orb_publish(_actuators_id, _actuators_0_pub, &_actuator);
+    /* publish the actuator controls */
+    if (_actuators_0_pub != nullptr) {
+        orb_publish(_actuators_id, _actuators_0_pub, &_actuator);
 
-	} else if (_actuators_id) {
-		_actuators_0_pub = orb_advertise(_actuators_id, &_actuator);
-	}
+    } else if (_actuators_id) {
+        _actuators_0_pub = orb_advertise(_actuators_id, &_actuator);
+    }
 }
 
 
 void SysID::control_pitch_aspeed(float airspeed_sp) {
     _att_sp.pitch_body = (_airspeed.indicated_airspeed_m_s - airspeed_sp) * airspeed_pitch_gain.get();
     // PX4_INFO("attitude setpoint pitch %0.3f",(double)_att_sp.pitch_body);
-	// check if attitude setpoint is bigger than 5deg or smaller than 10deg:
-	if (_att_sp.pitch_body < pitch_min.get()) {
-		_att_sp.pitch_body = pitch_min.get();
-	} else if (_att_sp.pitch_body > pitch_max.get()) {
-		_att_sp.pitch_body = pitch_max.get();
-	}
+    // check if attitude setpoint is bigger than 5deg or smaller than 10deg:
+    if (_att_sp.pitch_body < pitch_min.get()) {
+        _att_sp.pitch_body = pitch_min.get();
+    } else if (_att_sp.pitch_body > pitch_max.get()) {
+        _att_sp.pitch_body = pitch_max.get();
+    }
     // PX4_INFO("pitch setpoint is equal to: %.3f", (double)_att_sp.pitch_body);
 }
 
-void SysID::run()
-{
-	// Example: run the loop synchronized to the sensor_combined topic publication
-	int sensor_combined_sub = orb_subscribe(ORB_ID(sensor_combined));
-	_vehicle_status_sub = orb_subscribe(ORB_ID(vehicle_status));
-	_virtual_actuator_sub = orb_subscribe(ORB_ID(actuator_controls_virtual_sys_id));
-	_sys_id_sub = orb_subscribe(ORB_ID(system_identification));
-	_vehicle_local_pos_sub = orb_subscribe(ORB_ID(vehicle_local_position));
-	_airspeed_sub = orb_subscribe(ORB_ID(airspeed));
+void SysID::run() {
+    // Example: run the loop synchronized to the sensor_combined topic publication
+    int sensor_combined_sub = orb_subscribe(ORB_ID(sensor_combined));
+    _vehicle_status_sub = orb_subscribe(ORB_ID(vehicle_status));
+    _virtual_actuator_sub = orb_subscribe(ORB_ID(actuator_controls_virtual_sys_id));
+    _sys_id_sub = orb_subscribe(ORB_ID(system_identification));
+    _vehicle_local_pos_sub = orb_subscribe(ORB_ID(vehicle_local_position));
+    _airspeed_sub = orb_subscribe(ORB_ID(airspeed));
     _params_sub = orb_subscribe(ORB_ID(parameter_update));
 
 
-	_actuators_id = ORB_ID(actuator_controls_0);
-	_vehicle_status_id = ORB_ID(vehicle_status);
+    _actuators_id = ORB_ID(actuator_controls_0);
+    _vehicle_status_id = ORB_ID(vehicle_status);
     _attitude_sp_id = ORB_ID(vehicle_attitude_setpoint); // _attitude_sp_id = ORB_ID(fw_virtual_attitude_setpoint);
     _sys_id_id = ORB_ID(system_identification);
 
     /* rate limit control mode updates to 5Hz */
     // orb_set_interval(_vehicle_command_sub, 200);
 
-	px4_pollfd_struct_t fds[1];
+    px4_pollfd_struct_t fds[1];
     fds[0].fd = sensor_combined_sub;
     fds[0].events = POLLIN;
 
-	// initialize parameters
-	int parameter_update_sub = orb_subscribe(ORB_ID(parameter_update));
-	parameters_update(parameter_update_sub, true);
+    // initialize parameters
+    int parameter_update_sub = orb_subscribe(ORB_ID(parameter_update));
+    parameters_update(parameter_update_sub, true);
 
-	// polls the topics:
-	sys_id_poll();
-	actuator_poll();
-	vehicle_status_poll();
+    // polls the topics:
+    sys_id_poll();
+    actuator_poll();
+    vehicle_status_poll();
     vehicle_local_pos_poll();
-	airspeed_poll();
+    airspeed_poll();
 
     _vehicle_status.in_sys_id_maneuver = false;
     set_vehicle_status();
 
-    /*
-	// TODO: move to parameters
-	sys_id_modes = 3;
-    direction = 20.0f;
-	airspeed_pitch_gain = 15.0f;
-    actuator_pitch_treshold = 0.45f;*/
-
-
-	bool get_new_maneuver = false;
+    bool get_new_maneuver = false;
     bool all_maneuvers_finished = false;
     bool maneuver_finished = true;
     bool sys_id_reset = false;
 
-    int iteration = 0;
+    int iteration = 1;
 
     /*
      * if status_changed, then the set_vehicle_status() function will be prompted at the end in order
@@ -353,40 +335,40 @@ void SysID::run()
     bool status_changed = false;
     set_sys_id_topic();
 
-	while (!should_exit()) {
+    while (!should_exit()) {
         // TODO: sysnchronize with an other topic.
-		// wait for up to 1000ms for data
-		int pret = px4_poll(fds, (sizeof(fds) / sizeof(fds[0])), 1000);
+        // wait for up to 1000ms for data
+        int pret = px4_poll(fds, (sizeof(fds) / sizeof(fds[0])), 1000);
 
-		if (pret == 0) {
-			// Timeout: let the loop run anyway, don't do `continue` here
+        if (pret == 0) {
+            // Timeout: let the loop run anyway, don't do `continue` here
 
-		} else if (pret < 0) {
-			// this is undesirable but not much we can do
-			PX4_ERR("poll error %d, %d", pret, errno);
-			usleep(50000);
-			continue;
+        } else if (pret < 0) {
+            // this is undesirable but not much we can do
+            PX4_ERR("poll error %d, %d", pret, errno);
+            usleep(50000);
+            continue;
 
-		} else if (fds[0].revents & POLLIN) {
+        } else if (fds[0].revents & POLLIN) {
 
-			struct sensor_combined_s sensor_combined;
-			orb_copy(ORB_ID(sensor_combined), sensor_combined_sub, &sensor_combined);
+            struct sensor_combined_s sensor_combined;
+            orb_copy(ORB_ID(sensor_combined), sensor_combined_sub, &sensor_combined);
 
             // polls the topics:
             sys_id_poll();
-			actuator_poll();
+            actuator_poll();
             vehicle_status_poll();
             vehicle_local_pos_poll();
-			airspeed_poll();
+            airspeed_poll();
 
-			if (_vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_SYSID) {
-			    if (sys_id_reset) {
+            if (_vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_SYSID) {
+                if (sys_id_reset) {
                     _sys_id.mode = 0;
                     get_new_maneuver = false;
                     sys_id_reset = false;
                     all_maneuvers_finished = false;
                     maneuver_finished = true;
-			    }
+                }
                 if (!all_maneuvers_finished) {
                     if (!_vehicle_status.in_sys_id_maneuver) {
                         /* evalueates the condition for a new maneuver
@@ -400,8 +382,8 @@ void SysID::run()
                         if (_vehicle_local_pos.z < -altitude_start.get() && target_bearing * bearing > 0.98f) {
                             if (maneuver_finished) {
                                 get_new_maneuver = true;
-                                mavlink_log_critical(&_mavlink_log_pub, "[sys_id] getting new mode");
-                                iteration = 0;
+                                // mavlink_log_critical(&_mavlink_log_pub, "[sys_id] getting new mode");
+                                iteration = 1;
                             } else {
                                 /*
                                  * initialize sys_id maneuver
@@ -418,7 +400,8 @@ void SysID::run()
                                 _att_sp.yaw_body = 0.0f;
                                 _att_sp.thrust = 0.0f;
                                 set_attitude(_att_sp); // roll, pitch, yaw, thrust
-                                mavlink_log_critical(&_mavlink_log_pub, "[sys_id] stay in same mode");
+                                mavlink_log_critical(&_mavlink_log_pub, "[sys_id] stay in same mode, iteration = %d",
+                                                     iteration);
                             }
                         }
 
@@ -449,12 +432,12 @@ void SysID::run()
                                                          "[sys_id] ex maneuver %d bcs ptich_body > %0.2f",
                                                          system_identification_s::MODE_FIXED_PITCH,
                                                          (double) pitch_max.get());
-                                } else if (iteration > 2 && !maneuver_finished) {
+                                } else if (iteration == iter_max.get() && !maneuver_finished) {
                                     maneuver_finished = true;
                                     mavlink_log_critical(&_mavlink_log_pub,
-                                                         "[sys_id] ex maneuver %d bcs iteration > %d",
+                                                         "[sys_id] ex maneuver %d bcs iteration = %d",
                                                          system_identification_s::MODE_FIXED_PITCH,
-                                                         2);
+                                                         iter_max.get());
                                 }
                                 break;
 
@@ -567,45 +550,43 @@ void SysID::run()
                         set_vehicle_status();
                     }
                 }
+            } else {
+                sys_id_reset = true;
             }
-            else {
-			    sys_id_reset = true;
-			}
             set_sys_id_topic();
-		}
+        }
 
-		parameters_update(parameter_update_sub);
-	}
+        parameters_update(parameter_update_sub);
+    }
 
-	orb_unsubscribe(sensor_combined_sub);
-	orb_unsubscribe(parameter_update_sub);
-	orb_unsubscribe(_vehicle_status_sub);
-	orb_unsubscribe(_virtual_actuator_sub);
-	orb_unsubscribe(_sys_id_sub);
+    orb_unsubscribe(sensor_combined_sub);
+    orb_unsubscribe(parameter_update_sub);
+    orb_unsubscribe(_vehicle_status_sub);
+    orb_unsubscribe(_virtual_actuator_sub);
+    orb_unsubscribe(_sys_id_sub);
     orb_unsubscribe(_vehicle_local_pos_sub);
-	orb_unsubscribe(_airspeed_sub);
+    orb_unsubscribe(_airspeed_sub);
 }
 
 
-
-void SysID::parameters_update(int parameter_update_sub, bool force) // TODO: search for this to get an example how to handle parameters
+void SysID::parameters_update(int parameter_update_sub,
+                              bool force) // TODO: search for this to get an example how to handle parameters
 {
-	bool updated;
-	struct parameter_update_s param_upd;
+    bool updated;
+    struct parameter_update_s param_upd;
 
-	orb_check(parameter_update_sub, &updated);
+    orb_check(parameter_update_sub, &updated);
 
-	if (updated) {
-		orb_copy(ORB_ID(parameter_update), parameter_update_sub, &param_upd);
-	}
+    if (updated) {
+        orb_copy(ORB_ID(parameter_update), parameter_update_sub, &param_upd);
+    }
 
-	if (force || updated) {
-		updateParams();
-	}
+    if (force || updated) {
+        updateParams();
+    }
 }
 
 
-int sys_id_main(int argc, char *argv[])
-{
-	return SysID::main(argc, argv);
+int sys_id_main(int argc, char *argv[]) {
+    return SysID::main(argc, argv);
 }
