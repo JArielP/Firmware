@@ -185,6 +185,41 @@ PARAM_DEFINE_FLOAT(SID_1_AOA_MAX, 10);
 PARAM_DEFINE_INT32(SID_1_ITER_MAX, 10);
 
 /**
+ * Time constant
+ *
+ * Defines the time constant for the 211 pitch maneuver
+ *
+ * @group System Identification
+ * @unit deg
+ * @min 0
+ * @max 50
+ */
+PARAM_DEFINE_FLOAT(SID_4_TIME_CONST, 1);
+
+/**
+ * Actuator Steps
+ *
+ * Defines the steps down per iteration for the 211 pitch maneuver
+ *
+ * @group System Identification
+ * @unit
+ * @min 0
+ * @max 50
+ */
+PARAM_DEFINE_FLOAT(SID_4_STEP, 0.01);
+
+/**
+ * Maximal amount of iterations
+ *
+ * Defines how many iteratioions ar flown in the 211 pitch maneuver
+ *
+ * @group System Identification
+ * @min 0
+ * @max 50
+ */
+PARAM_DEFINE_INT32(SID_4_ITER_MAX, 10);
+
+/**
  * Altitude Stop
  *
  * @group System Identification

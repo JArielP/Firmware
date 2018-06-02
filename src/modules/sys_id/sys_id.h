@@ -137,19 +137,24 @@ private:
     void parameters_update(int parameter_update_sub, bool force = false);
 
 	DEFINE_PARAMETERS(
-            (ParamInt<px4::params::SID_MODES>) sys_id_modes,                  /**< example parameter */
-            (ParamFloat<px4::params::SID_DIR>) direction,                     /**< example parameter */
-            (ParamFloat<px4::params::SID_1_A_PP>) airspeed_pitch_gain,        /**< example parameter */
-            (ParamFloat<px4::params::SID_ELEV_TH>) actuator_pitch_treshold,   /**< example parameter */
-            (ParamFloat<px4::params::SID_TIME>) time,                         /**< example parameter */
-            (ParamFloat<px4::params::SID_1_ASP_SART>) airspeed_start,         /**< example parameter */
-            (ParamFloat<px4::params::SID_1_ASP_STEP>) step,                   /**< example parameter */
-            (ParamFloat<px4::params::SID_ALT_START>) altitude_start,          /**< example parameter */
-            (ParamFloat<px4::params::SID_ALT_STOP>) altitude_stop,            /**< example parameter */
-			(ParamFloat<px4::params::SID_1_PITCH_MAX>) pitch_max,             /**< example parameter */
-			(ParamFloat<px4::params::SID_1_PITCH_MIN>) pitch_min,             /**< example parameter */
-			(ParamFloat<px4::params::SID_1_AOA_MAX>) aoa_max,                 /**< example parameter */
-            (ParamInt<px4::params::SID_1_ITER_MAX>) iter_max                /**< example parameter */
+            (ParamInt<px4::params::SID_MODES>) sys_id_modes,
+            (ParamFloat<px4::params::SID_DIR>) direction,
+            (ParamFloat<px4::params::SID_1_A_PP>) airspeed_pitch_gain,
+            (ParamFloat<px4::params::SID_ELEV_TH>) actuator_pitch_treshold,
+            (ParamFloat<px4::params::SID_TIME>) time,
+            (ParamFloat<px4::params::SID_1_ASP_SART>) airspeed_start,
+            (ParamFloat<px4::params::SID_1_ASP_STEP>) step_1,
+            (ParamFloat<px4::params::SID_ALT_START>) altitude_start,
+            (ParamFloat<px4::params::SID_ALT_STOP>) altitude_stop,
+			(ParamFloat<px4::params::SID_1_PITCH_MAX>) pitch_max,
+			(ParamFloat<px4::params::SID_1_PITCH_MIN>) pitch_min,
+			(ParamFloat<px4::params::SID_1_AOA_MAX>) aoa_max,
+            (ParamInt<px4::params::SID_1_ITER_MAX>) iter_max_1,
+            (ParamFloat<px4::params::SID_4_TIME_CONST>) time_const_4,
+            (ParamFloat<px4::params::SID_4_STEP>) step_4,
+            (ParamInt<px4::params::SID_4_ITER_MAX>) iter_max_4,
+            (ParamFloat<px4::params::TRIM_ROLL>) trim_roll,
+            (ParamFloat<px4::params::TRIM_PITCH>) trim_pitch
 	)
 };
 

@@ -328,6 +328,8 @@ void SysID::run() {
 
     int iteration = 1;
 
+    // float actuator_pitch = 0.0f;
+
     /*
      * if status_changed, then the set_vehicle_status() function will be prompted at the end in order
      * to publish the new status
@@ -413,10 +415,13 @@ void SysID::run() {
                                 break;
 
                             case system_identification_s::MODE_FIXED_PITCH:
-                                control_pitch_aspeed(airspeed_start.get() - (float) iteration * step.get());
+                                control_pitch_aspeed(airspeed_start.get() - (float) iteration * step_1.get());
                                 set_attitude(_att_sp);
                                 set_rates(_virtual_actuator);
-                                // conditon for exiting the sys_id mode:
+
+                                /*
+                                 * conditon for exiting the sys_id mode of constant pitch gliding
+                                 */
                                 if ((_virtual_actuator.control[actuator_controls_s::INDEX_PITCH] >
                                      actuator_pitch_treshold.get() ||
                                      _virtual_actuator.control[actuator_controls_s::INDEX_PITCH] <
@@ -432,12 +437,12 @@ void SysID::run() {
                                                          "[sys_id] ex maneuver %d bcs ptich_body > %0.2f",
                                                          system_identification_s::MODE_FIXED_PITCH,
                                                          (double) pitch_max.get());
-                                } else if (iteration == iter_max.get() && !maneuver_finished) {
+                                } else if (iteration == iter_max_1.get() && !maneuver_finished) {
                                     maneuver_finished = true;
                                     mavlink_log_critical(&_mavlink_log_pub,
                                                          "[sys_id] ex maneuver %d bcs iteration = %d",
                                                          system_identification_s::MODE_FIXED_PITCH,
-                                                         iter_max.get());
+                                                         iter_max_1.get());
                                 }
                                 break;
 
@@ -449,32 +454,77 @@ void SysID::run() {
 
                             case system_identification_s::MODE_211_ROLL:
                                 set_attitude(_att_sp);
-                                if (hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) > 2000000 &&
-                                    hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) < 4000000) {
-                                    _virtual_actuator.timestamp = hrt_absolute_time();
-                                    _virtual_actuator.control[actuator_controls_s::INDEX_ROLL] = 0.1f;
-                                } else if (hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) > 4000000 &&
-                                           hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) < 5000000) {
-                                    _virtual_actuator.timestamp = hrt_absolute_time();
-                                    _virtual_actuator.control[actuator_controls_s::INDEX_ROLL] = -0.1f;
-                                } else if (hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) > 5000000 &&
-                                           hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) < 6000000) {
-                                    _virtual_actuator.timestamp = hrt_absolute_time();
-                                    _virtual_actuator.control[actuator_controls_s::INDEX_ROLL] = 0.1f;
-                                } else if (hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) > 6000000 &&
-                                           hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) < 8000000) {
-                                    _virtual_actuator.timestamp = hrt_absolute_time();
-                                    _virtual_actuator.control[actuator_controls_s::INDEX_ROLL] = 0.0f;
-                                }
                                 set_rates(_virtual_actuator);
                                 maneuver_finished = true;
                                 break;
 
-                            case system_identification_s::MODE_211_PITCH:
+                            case system_identification_s::MODE_211_PITCH: {
                                 set_attitude(_att_sp);
+                                if (iteration == 1) {
+                                    _virtual_actuator.control[actuator_controls_s::INDEX_PITCH] = 0.0f;
+                                } else {
+                                    float start_time = (time.get() - time_const_4.get() * 4.0f) / 2.0f;
+                                    if (hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) < start_time * 1000000.0f) {
+                                        _virtual_actuator.timestamp = hrt_absolute_time();
+                                        _virtual_actuator.control[actuator_controls_s::INDEX_PITCH] = 0.0f;
+                                    } else if (
+                                            hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) >
+                                            start_time * 1000000.0f &&
+                                            hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) <
+                                            (start_time + 2.0f * time_const_4.get()) * 1000000.0f) {      // 2
+                                        _virtual_actuator.timestamp = hrt_absolute_time();
+                                        _virtual_actuator.control[actuator_controls_s::INDEX_PITCH] =
+                                                0.01f + ((float) iteration * step_4.get());
+                                    } else if (hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) >
+                                               (start_time + 2.0f * time_const_4.get()) * 1000000.0f &&
+                                               hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) <
+                                               (start_time + 3.0f * time_const_4.get()) * 1000000.0f) {   // 1
+                                        _virtual_actuator.timestamp = hrt_absolute_time();
+                                        _virtual_actuator.control[actuator_controls_s::INDEX_PITCH] =
+                                                -0.01f - ((float) iteration * step_4.get());
+                                    } else if (hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) >
+                                               (start_time + 3.0f * time_const_4.get()) * 1000000.0f &&
+                                               hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) <
+                                               (start_time + 4.0f * time_const_4.get()) * 1000000.0f) {   // 1
+                                        _virtual_actuator.timestamp = hrt_absolute_time();
+                                        _virtual_actuator.control[actuator_controls_s::INDEX_PITCH] =
+                                                0.01f + ((float) iteration * step_4.get());
+                                    } else if (hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) >
+                                               (start_time + 4.0f * time_const_4.get()) * 1000000.0f) {
+                                        _virtual_actuator.timestamp = hrt_absolute_time();
+                                        _virtual_actuator.control[actuator_controls_s::INDEX_PITCH] = 0.0f;
+                                    }
+                                }
+                                _virtual_actuator.control[actuator_controls_s::INDEX_PITCH] += trim_pitch.get();
                                 set_rates(_virtual_actuator);
-                                maneuver_finished = true;
+
+                                /*
+                                 * conditon for exiting the sys_id mode of 211 pitch
+                                 */
+                                if ((_virtual_actuator.control[actuator_controls_s::INDEX_PITCH] >
+                                     actuator_pitch_treshold.get() ||
+                                     _virtual_actuator.control[actuator_controls_s::INDEX_PITCH] <
+                                     -actuator_pitch_treshold.get()) && !maneuver_finished) {
+                                    maneuver_finished = true;
+                                    mavlink_log_critical(&_mavlink_log_pub,
+                                                         "[sys_id] ex maneuver %d bcs acctuator_elev > %0.2f",
+                                                         system_identification_s::MODE_211_PITCH,
+                                                         (double) actuator_pitch_treshold.get());
+                                } else if (_att_sp.pitch_body >= pitch_max.get() && !maneuver_finished) {
+                                    maneuver_finished = true;
+                                    mavlink_log_critical(&_mavlink_log_pub,
+                                                         "[sys_id] ex maneuver %d bcs ptich_body > %0.2f",
+                                                         system_identification_s::MODE_211_PITCH,
+                                                         (double) pitch_max.get());
+                                } else if (iteration == iter_max_4.get() && !maneuver_finished) {
+                                    maneuver_finished = true;
+                                    mavlink_log_critical(&_mavlink_log_pub,
+                                                         "[sys_id] ex maneuver %d bcs iteration = %d",
+                                                         system_identification_s::MODE_211_PITCH,
+                                                         iter_max_4.get());
+                                }
                                 break;
+                            }
 
                             case system_identification_s::MODE_211_YAW:
                                 set_attitude(_att_sp);
@@ -552,6 +602,10 @@ void SysID::run() {
                 }
             } else {
                 sys_id_reset = true;
+                if (_vehicle_status.in_sys_id_maneuver) {
+                    _vehicle_status.in_sys_id_maneuver = false;
+                    set_vehicle_status();
+                }
             }
             set_sys_id_topic();
         }
