@@ -261,7 +261,7 @@ void SysID::set_attitude(vehicle_attitude_setpoint_s &att_sp) {
     }
 }
 
-void SysID::set_rates(actuator_controls_s &_actuator) {
+void SysID::set_acctuators(actuator_controls_s &_actuator) {
     /* publish the actuator controls */
     if (_actuators_0_pub != nullptr) {
         orb_publish(_actuators_id, _actuators_0_pub, &_actuator);
@@ -328,7 +328,7 @@ void SysID::run() {
 
     int iteration = 1;
 
-    // float actuator_pitch = 0.0f;
+    float actuator_pitch = 0.0f;
 
     /*
      * if status_changed, then the set_vehicle_status() function will be prompted at the end in order
@@ -365,6 +365,7 @@ void SysID::run() {
 
             if (_vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_SYSID) {
                 if (sys_id_reset) {
+                    _sys_id.reset_count++;
                     _sys_id.mode = 0;
                     get_new_maneuver = false;
                     sys_id_reset = false;
@@ -415,9 +416,9 @@ void SysID::run() {
                                 break;
 
                             case system_identification_s::MODE_FIXED_PITCH:
-                                control_pitch_aspeed(airspeed_start.get() - (float) iteration * step_1.get());
+                                control_pitch_aspeed(airspeed_start.get() - (float) (iteration-1) * step_1.get());
                                 set_attitude(_att_sp);
-                                set_rates(_virtual_actuator);
+                                set_acctuators(_virtual_actuator);
 
                                 /*
                                  * conditon for exiting the sys_id mode of constant pitch gliding
@@ -429,32 +430,142 @@ void SysID::run() {
                                     maneuver_finished = true;
                                     mavlink_log_critical(&_mavlink_log_pub,
                                                          "[sys_id] ex maneuver %d bcs acctuator_elev > %0.2f",
-                                                         system_identification_s::MODE_FIXED_PITCH,
+                                                         _sys_id.mode,
                                                          (double) actuator_pitch_treshold.get());
                                 } else if (_att_sp.pitch_body >= pitch_max.get() && !maneuver_finished) {
                                     maneuver_finished = true;
                                     mavlink_log_critical(&_mavlink_log_pub,
                                                          "[sys_id] ex maneuver %d bcs ptich_body > %0.2f",
-                                                         system_identification_s::MODE_FIXED_PITCH,
+                                                         _sys_id.mode,
                                                          (double) pitch_max.get());
                                 } else if (iteration == iter_max_1.get() && !maneuver_finished) {
                                     maneuver_finished = true;
                                     mavlink_log_critical(&_mavlink_log_pub,
                                                          "[sys_id] ex maneuver %d bcs iteration = %d",
-                                                         system_identification_s::MODE_FIXED_PITCH,
+                                                         _sys_id.mode,
+                                                         iter_max_1.get());
+                                }
+                                break;
+
+                            case system_identification_s::MODE_FIXED_PITCH_2:
+                                if (ang_stop_2.get() > ang_start_2.get()) {
+                                    _att_sp.pitch_body = ang_start_2.get() + (float)(iteration - 1) * ang_step_2.get();
+                                } else {
+                                    _att_sp.pitch_body = ang_start_2.get() - (float)(iteration - 1) * ang_step_2.get();
+                                }
+                                set_attitude(_att_sp);
+                                set_acctuators(_virtual_actuator);
+
+                                /*
+                                 * conditon for exiting the sys_id mode of constant pitch gliding 2
+                                 */
+                                if ((_virtual_actuator.control[actuator_controls_s::INDEX_PITCH] >
+                                     actuator_pitch_treshold.get() ||
+                                     _virtual_actuator.control[actuator_controls_s::INDEX_PITCH] <
+                                     -actuator_pitch_treshold.get()) && !maneuver_finished) {
+                                    maneuver_finished = true;
+                                    mavlink_log_critical(&_mavlink_log_pub,
+                                                         "[sys_id] ex maneuver %d bcs acctuator_elev > %0.2f",
+                                                         _sys_id.mode,
+                                                         (double) actuator_pitch_treshold.get());
+                                } else if (_att_sp.pitch_body >= pitch_max.get() && !maneuver_finished) {
+                                    maneuver_finished = true;
+                                    mavlink_log_critical(&_mavlink_log_pub,
+                                                         "[sys_id] ex maneuver %d bcs ptich_body > %0.2f",
+                                                         _sys_id.mode,
+                                                         (double) pitch_max.get());
+                                } else if (iteration == iter_max_1.get() && !maneuver_finished) {
+                                    maneuver_finished = true;
+                                    mavlink_log_critical(&_mavlink_log_pub,
+                                                         "[sys_id] ex maneuver %d bcs iteration = %d",
+                                                         _sys_id.mode,
+                                                         iter_max_1.get());
+                                }
+                                break;
+
+                            case system_identification_s::MODE_FIXED_PITCH_3:
+                                if (ang_stop_2.get() > ang_start_2.get()) {
+                                    _att_sp.pitch_body = ang_start_2.get() + (float)(iteration - 1) * ang_step_2.get();
+                                } else {
+                                    _att_sp.pitch_body = ang_start_2.get() - (float)(iteration - 1) * ang_step_2.get();
+                                }
+                                set_attitude(_att_sp);
+                                if (hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) < t_elevator_fix.get()) {
+                                    actuator_pitch = _virtual_actuator.control[actuator_controls_s::INDEX_PITCH];
+                                } else {
+                                    _virtual_actuator.control[actuator_controls_s::INDEX_PITCH] = actuator_pitch;
+                                }
+                                set_acctuators(_virtual_actuator);
+
+                                /*
+                                 * conditon for exiting the sys_id mode of constant pitch gliding 2
+                                 */
+                                if ((_virtual_actuator.control[actuator_controls_s::INDEX_PITCH] >
+                                     actuator_pitch_treshold.get() ||
+                                     _virtual_actuator.control[actuator_controls_s::INDEX_PITCH] <
+                                     -actuator_pitch_treshold.get()) && !maneuver_finished) {
+                                    maneuver_finished = true;
+                                    mavlink_log_critical(&_mavlink_log_pub,
+                                                         "[sys_id] ex maneuver %d bcs acctuator_elev > %0.2f",
+                                                         _sys_id.mode,
+                                                         (double) actuator_pitch_treshold.get());
+                                } else if (_att_sp.pitch_body >= pitch_max.get() && !maneuver_finished) {
+                                    maneuver_finished = true;
+                                    mavlink_log_critical(&_mavlink_log_pub,
+                                                         "[sys_id] ex maneuver %d bcs ptich_body > %0.2f",
+                                                         _sys_id.mode,
+                                                         (double) pitch_max.get());
+                                } else if (iteration == iter_max_1.get() && !maneuver_finished) {
+                                    maneuver_finished = true;
+                                    mavlink_log_critical(&_mavlink_log_pub,
+                                                         "[sys_id] ex maneuver %d bcs iteration = %d",
+                                                         _sys_id.mode,
+                                                         iter_max_1.get());
+                                }
+                                break;
+
+                            case system_identification_s::MODE_PITCH_RAMP:
+                                _virtual_actuator.control[actuator_controls_s::INDEX_PITCH] =
+                                         math::constrain((hrt_elapsed_time(&_sys_id.timestamp_start_maneuver) / (time.get() * 1000000.0f) - 0.1f * (iteration - 1)), -1.0f, 1.0f);
+                                set_attitude(_att_sp);
+                                set_acctuators(_virtual_actuator);
+
+                                /*
+                                 * conditon for exiting the sys_id mode of constant pitch gliding 2
+                                 */
+                                if ((_virtual_actuator.control[actuator_controls_s::INDEX_PITCH] >
+                                     actuator_pitch_treshold.get() ||
+                                     _virtual_actuator.control[actuator_controls_s::INDEX_PITCH] <
+                                     -actuator_pitch_treshold.get()) && !maneuver_finished) {
+                                    maneuver_finished = true;
+                                    mavlink_log_critical(&_mavlink_log_pub,
+                                                         "[sys_id] ex maneuver %d bcs acctuator_elev > %0.2f",
+                                                         _sys_id.mode,
+                                                         (double) actuator_pitch_treshold.get());
+                                } else if (_att_sp.pitch_body >= pitch_max.get() && !maneuver_finished) {
+                                    maneuver_finished = true;
+                                    mavlink_log_critical(&_mavlink_log_pub,
+                                                         "[sys_id] ex maneuver %d bcs ptich_body > %0.2f",
+                                                         _sys_id.mode,
+                                                         (double) pitch_max.get());
+                                } else if (iteration == iter_max_1.get() && !maneuver_finished) {
+                                    maneuver_finished = true;
+                                    mavlink_log_critical(&_mavlink_log_pub,
+                                                         "[sys_id] ex maneuver %d bcs iteration = %d",
+                                                         _sys_id.mode,
                                                          iter_max_1.get());
                                 }
                                 break;
 
                             case system_identification_s::MODE_FIXED_ELEVATOR:
                                 set_attitude(_att_sp);
-                                set_rates(_virtual_actuator);
+                                set_acctuators(_virtual_actuator);
                                 maneuver_finished = true;
                                 break;
 
                             case system_identification_s::MODE_211_ROLL:
                                 set_attitude(_att_sp);
-                                set_rates(_virtual_actuator);
+                                set_acctuators(_virtual_actuator);
                                 maneuver_finished = true;
                                 break;
 
@@ -496,7 +607,7 @@ void SysID::run() {
                                     }
                                 }
                                 _virtual_actuator.control[actuator_controls_s::INDEX_PITCH] += trim_pitch.get();
-                                set_rates(_virtual_actuator);
+                                set_acctuators(_virtual_actuator);
 
                                 /*
                                  * conditon for exiting the sys_id mode of 211 pitch
@@ -508,19 +619,19 @@ void SysID::run() {
                                     maneuver_finished = true;
                                     mavlink_log_critical(&_mavlink_log_pub,
                                                          "[sys_id] ex maneuver %d bcs acctuator_elev > %0.2f",
-                                                         system_identification_s::MODE_211_PITCH,
+                                                         _sys_id.mode,
                                                          (double) actuator_pitch_treshold.get());
                                 } else if (_att_sp.pitch_body >= pitch_max.get() && !maneuver_finished) {
                                     maneuver_finished = true;
                                     mavlink_log_critical(&_mavlink_log_pub,
                                                          "[sys_id] ex maneuver %d bcs ptich_body > %0.2f",
-                                                         system_identification_s::MODE_211_PITCH,
+                                                         _sys_id.mode,
                                                          (double) pitch_max.get());
                                 } else if (iteration == iter_max_4.get() && !maneuver_finished) {
                                     maneuver_finished = true;
                                     mavlink_log_critical(&_mavlink_log_pub,
                                                          "[sys_id] ex maneuver %d bcs iteration = %d",
-                                                         system_identification_s::MODE_211_PITCH,
+                                                         _sys_id.mode,
                                                          iter_max_4.get());
                                 }
                                 break;
@@ -528,7 +639,7 @@ void SysID::run() {
 
                             case system_identification_s::MODE_211_YAW:
                                 set_attitude(_att_sp);
-                                set_rates(_virtual_actuator);
+                                set_acctuators(_virtual_actuator);
                                 maneuver_finished = true;
                                 break;
 

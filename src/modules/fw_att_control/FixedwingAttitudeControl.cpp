@@ -401,10 +401,12 @@ FixedwingAttitudeControl::vehicle_status_poll()
             _attitude_setpoint_id = ORB_ID(vehicle_attitude_setpoint);
             _actuators_0_pub = nullptr;
             //_pitch_ctrl.set_k_i(3.0f);
-            _roll_ctrl.set_k_i(0);
             _pitch_ctrl.set_k_i(0);
+            _roll_ctrl.set_k_i(0);
             _yaw_ctrl.set_k_i(0);
             _wheel_ctrl.set_k_i(0);
+
+            _pitch_ctrl.set_integrator_max(_parameters.p_integrator_max);
 
             _roll_ctrl.reset_integrator();
             _pitch_ctrl.reset_integrator();
@@ -422,6 +424,8 @@ FixedwingAttitudeControl::vehicle_status_poll()
             _roll_ctrl.set_k_i(_parameters.r_i);
             _yaw_ctrl.set_k_i(_parameters.y_i);
             _wheel_ctrl.set_k_i(_parameters.w_i);
+
+            _pitch_ctrl.set_integrator_max(_parameters.p_integrator_max);
 
             _roll_ctrl.reset_integrator();
             _pitch_ctrl.reset_integrator();
@@ -889,7 +893,6 @@ void FixedwingAttitudeControl::run()
 			_actuators_airframe.timestamp_sample = _att.timestamp;
 
 			/* Only publish if any of the proper modes are enabled */
-            // TODO: publish onto right acutator group, when in sys_id mode.
 			if (_vcontrol_mode.flag_control_rates_enabled ||
 			    _vcontrol_mode.flag_control_attitude_enabled ||
 			    _vcontrol_mode.flag_control_manual_enabled) {

@@ -46,23 +46,29 @@
  *
  * Set bits in the following positions to enable:
  * 0 : --
- * 1 : Set to true for fixed pitch maneuver
- * 2 : Set to true for fixed elevator maneuver
- * 3 : Set to true for 211 with elevator
- * 4 : Set to true for 211 with ailerons
- * 5 : Set to true for 211 with rudder
+ * 1 :
+ * 2 :
+ * 3 :
+ * 4 :
+ * 5 :
+ * 6 :
+ * 7 :
+ * 8 :
  *
  * You can NOT add maneuvers while it is already executing some
  *
  * @group System Identification
  * @min 0
- * @max 63
+ * @max 1023
  * @bit 0 --
- * @bit 1 fixed pitch maneuver
- * @bit 2 fixed elevator maneuver
- * @bit 3 211 with elevator
- * @bit 4 211 with ailerons
- * @bit 5 211 with rudder
+ * @bit 1 fixed pitch (track airspeed)
+ * @bit 2 fixed pitch (track pitch)
+ * @bit 3 fixed pitch (track pitch, then const)
+ * @bit 4 ramp on pitch
+ * @bit 5 fixed elevator maneuver
+ * @bit 6 211 with elevator
+ * @bit 7 211 with ailerons
+ * @bit 8 211 with rudder
  */
 PARAM_DEFINE_INT32(SID_MODES, 3);
 
@@ -183,6 +189,67 @@ PARAM_DEFINE_FLOAT(SID_1_AOA_MAX, 10);
  * @max 50
  */
 PARAM_DEFINE_INT32(SID_1_ITER_MAX, 10);
+
+
+/**
+ * Maximal amount of iterations
+ *
+ * Defines how many iteratioions ar flown in this maneuver
+ *
+ * @group System Identification
+ * @min 0
+ * @max 50
+ */
+PARAM_DEFINE_INT32(SID_2_ITER_MAX, 10);
+
+/**
+ * Angle Start
+ *
+ * Defines the the angle at witch the maneuver should start
+ *
+ * @group System Identification
+ * @unit deg
+ * @min -50
+ * @max 50
+ */
+PARAM_DEFINE_FLOAT(SID_2_ANG_STOP, 10);
+
+/**
+ * Angle Stop
+ *
+ * Defines the the angle at witch the maneuver should stop
+ *
+ * @group System Identification
+ * @unit deg
+ * @min -50
+ * @max 50
+ */
+PARAM_DEFINE_FLOAT(SID_2_ANG_START, 10);
+
+/**
+ * Angle Step
+ *
+ * Defines the amplitude of the steps that are taken after each maneuver.
+ * If it is negative or not is defined by if angle start > angle stop or not
+ *
+ * @group System Identification
+ * @unit deg
+ * @min 0
+ * @max 50
+ */
+PARAM_DEFINE_FLOAT(SID_2_ANG_STEP, 10);
+
+/**
+ * Time to fix elevator
+ *
+ * Defines the time after witch the elevator gets fixed
+ *
+ * @group System Identification
+ * @unit s
+ * @min 0
+ * @max 50
+ */
+PARAM_DEFINE_FLOAT(SID_2_T_E_FIX, 3);
 
 /**
  * Time constant

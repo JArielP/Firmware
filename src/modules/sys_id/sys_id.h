@@ -86,7 +86,7 @@ public:
 private:
 
 	void set_vehicle_status();
-	void set_rates(actuator_controls_s &_actuator);
+	void set_acctuators(actuator_controls_s &_actuator);
 	void set_attitude(vehicle_attitude_setpoint_s &_att_sp);
 	void set_sys_id_topic();
 
@@ -154,7 +154,12 @@ private:
             (ParamFloat<px4::params::SID_4_STEP>) step_4,
             (ParamInt<px4::params::SID_4_ITER_MAX>) iter_max_4,
             (ParamFloat<px4::params::TRIM_ROLL>) trim_roll,
-            (ParamFloat<px4::params::TRIM_PITCH>) trim_pitch
+            (ParamFloat<px4::params::TRIM_PITCH>) trim_pitch,
+            (ParamInt<px4::params::SID_2_ITER_MAX>) iter_max_2,
+            (ParamFloat<px4::params::SID_2_ANG_STOP>) ang_stop_2,
+            (ParamFloat<px4::params::SID_2_ANG_START>) ang_start_2,
+            (ParamFloat<px4::params::SID_2_ANG_STEP>) ang_step_2,
+            (ParamFloat<px4::params::SID_2_T_E_FIX>) t_elevator_fix
 	)
 };
 

@@ -98,6 +98,7 @@
 #include <uORB/topics/collision_report.h>
 #include <uORB/topics/sensor_accel.h>
 #include <uORB/topics/sensor_gyro.h>
+#include <uORB/topics/angle_of_attack.h>
 #include <uORB/uORB.h>
 
 
@@ -1095,6 +1096,74 @@ protected:
 			return true;
 		}
 
+		return false;
+	}
+};
+
+class MavlinkStreamFteroSensors : public MavlinkStream
+{
+public:
+	const char *get_name() const
+	{
+		return MavlinkStreamFteroSensors::get_name_static();
+	}
+
+	static const char *get_name_static()
+	{
+		return "FTERO_SENSORS";
+	}
+
+	static uint16_t get_id_static()
+	{
+		return MAVLINK_MSG_ID_FTERO_SENSORS;
+	}
+
+	uint16_t get_id()
+	{
+		return get_id_static();
+	}
+
+	static MavlinkStream *new_instance(Mavlink *mavlink)
+	{
+		return new MavlinkStreamFteroSensors(mavlink);
+	}
+
+	unsigned get_size()
+	{
+		return MAVLINK_MSG_ID_FTERO_SENSORS_LEN + MAVLINK_NUM_NON_PAYLOAD_BYTES;
+	}
+
+private:
+	MavlinkOrbSubscription *_AoA_sub;
+	uint64_t _AoA_time;
+
+	/* do not allow top copying this class */
+	MavlinkStreamFteroSensors(MavlinkStreamFteroSensors &);
+	MavlinkStreamFteroSensors &operator = (const MavlinkStreamFteroSensors &);
+
+protected:
+	explicit MavlinkStreamFteroSensors(Mavlink *mavlink) : MavlinkStream(mavlink),
+														   _AoA_sub(_mavlink->add_orb_subscription(ORB_ID(angle_of_attack))),
+														   _AoA_time(0)
+	{}
+
+	bool send(const hrt_abstime t)
+	{
+		struct angle_of_attack_s _aoa = {};
+
+		bool updated = _AoA_sub->update(&_AoA_time, &_aoa);
+
+		if (updated) {
+			mavlink_ftero_sensors_t msg = {};
+
+			msg.time_boot_ms = _aoa.timestamp / 1000;
+			msg.tether_force = -1.0f;
+			msg.AoA = _aoa.AoA_filt;
+			// PX4_INFO("sending ftero_values, aoa = %0.5f", (double)msg.AoA);
+
+			mavlink_msg_ftero_sensors_send_struct(_mavlink->get_channel(), &msg);
+			return true;
+		}
 		return false;
 	}
 };
@@ -4444,5 +4513,6 @@ const StreamListItem *streams_list[] = {
 	new StreamListItem(&MavlinkStreamMountOrientation::new_instance, &MavlinkStreamMountOrientation::get_name_static, &MavlinkStreamMountOrientation::get_id_static),
 	new StreamListItem(&MavlinkStreamHighLatency::new_instance, &MavlinkStreamHighLatency::get_name_static, &MavlinkStreamWind::get_id_static),
 	new StreamListItem(&MavlinkStreamGroundTruth::new_instance, &MavlinkStreamGroundTruth::get_name_static, &MavlinkStreamGroundTruth::get_id_static),
+	new StreamListItem(&MavlinkStreamFteroSensors::new_instance, &MavlinkStreamFteroSensors::get_name_static, &MavlinkStreamFteroSensors::get_id_static),
 	nullptr
 };
