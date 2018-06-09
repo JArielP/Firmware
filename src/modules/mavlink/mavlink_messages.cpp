@@ -1099,7 +1099,7 @@ protected:
 		return false;
 	}
 };
-
+#if false
 class MavlinkStreamFteroSensors : public MavlinkStream
 {
 public:
@@ -1167,7 +1167,7 @@ protected:
 		return false;
 	}
 };
-
+#endif
 
 class MavlinkStreamGPSRawInt : public MavlinkStream
 {
@@ -4513,6 +4513,6 @@ const StreamListItem *streams_list[] = {
 	new StreamListItem(&MavlinkStreamMountOrientation::new_instance, &MavlinkStreamMountOrientation::get_name_static, &MavlinkStreamMountOrientation::get_id_static),
 	new StreamListItem(&MavlinkStreamHighLatency::new_instance, &MavlinkStreamHighLatency::get_name_static, &MavlinkStreamWind::get_id_static),
 	new StreamListItem(&MavlinkStreamGroundTruth::new_instance, &MavlinkStreamGroundTruth::get_name_static, &MavlinkStreamGroundTruth::get_id_static),
-	new StreamListItem(&MavlinkStreamFteroSensors::new_instance, &MavlinkStreamFteroSensors::get_name_static, &MavlinkStreamFteroSensors::get_id_static),
+//	new StreamListItem(&MavlinkStreamFteroSensors::new_instance, &MavlinkStreamFteroSensors::get_name_static, &MavlinkStreamFteroSensors::get_id_static),
 	nullptr
 };
