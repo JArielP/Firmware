@@ -111,9 +111,11 @@ void AOAS::cycle() {
     //convert raw data to angle and save to uorb
     int raw = adc_data[7].am_data;
     orb_data.AoA_raw = raw;
-    // double raw_scale = ((double)raw - 2322.1)/439.52;
-    orb_data.AoA = raw;//-1.5672*raw_scale*raw_scale*raw_scale - 2.9806*raw_scale*raw_scale - 31.253*raw_scale - 2.341 ;
+    double raw_scale = (double)raw/1000.0;
+    orb_data.AoA = -36.405*raw_scale*raw_scale*raw_scale + 238.62*raw_scale*raw_scale - 586.33*raw_scale + 540.94 ;
     orb_data.AoA_filt = _filter_aoa.apply(orb_data.AoA);
+    orb_data.AoA_filt = raw;
+    orb_data.model = angle_of_attack_s::AOA_MODEL_1;
     orb_data.timestamp = hrt_absolute_time();
 
     //PX4_INFO("%f", (double) orb_data.aoa);

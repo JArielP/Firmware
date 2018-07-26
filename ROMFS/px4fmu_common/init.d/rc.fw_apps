@@ -26,7 +26,8 @@ fw_pos_control_l1 start
 #
 # Start aoa sensor
 #
-aoas start
+# aoas start
+aoas_2 start
 
 #
 # Start Land Detector

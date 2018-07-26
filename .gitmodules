@@ -1,6 +1,9 @@
 [submodule "mavlink/include/mavlink/v2.0"]
 	path = mavlink/include/mavlink/v2.0
 	url = git@gitlab.ethz.ch:peterjo/mavlink_v2.git
+[submodule "mavlink/include/mavlink/v1.0"]
+	path = mavlink/include/mavlink/v1.0
+	url = git@gitlab.ethz.ch:peterjo/mavlink_v2.git
 [submodule "src/modules/uavcan/libuavcan"]
 	path = src/modules/uavcan/libuavcan
 	url = https://github.com/UAVCAN/libuavcan.git

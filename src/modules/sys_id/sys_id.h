@@ -49,6 +49,7 @@
 #include <uORB/topics/position_setpoint.h>
 #include <uORB/topics/vehicle_local_position.h>
 #include <uORB/topics/airspeed.h>
+#include <uORB/topics/manual_control_setpoint.h>
 
 using matrix::Eulerf;
 using matrix::Quatf;
@@ -96,6 +97,7 @@ private:
     int _vehicle_local_pos_sub{-1};
     int _airspeed_sub{-1};
     int _params_sub{-1};
+    int _manual_sub{-1};
 
 	vehicle_status_s _vehicle_status {};
     actuator_controls_s _virtual_actuator {};
@@ -103,6 +105,7 @@ private:
     vehicle_local_position_s _vehicle_local_pos {};
     airspeed_s _airspeed{};
     vehicle_attitude_setpoint_s _att_sp{};
+    manual_control_setpoint_s _manual{};
 
 	orb_advert_t	_actuators_0_pub{nullptr};		/**< actuator control group 0 setpoint */
 	orb_id_t 		_actuators_id{nullptr};	// pointer to correct actuator controls0 uORB metadata structure
@@ -126,6 +129,7 @@ private:
 	void sys_id_poll();
     void vehicle_local_pos_poll();
     void airspeed_poll();
+    void vehicle_manual_poll();
 
     void control_pitch_aspeed(float airspeed_sp);
 
@@ -159,7 +163,10 @@ private:
             (ParamFloat<px4::params::SID_2_ANG_STOP>) ang_stop_2,
             (ParamFloat<px4::params::SID_2_ANG_START>) ang_start_2,
             (ParamFloat<px4::params::SID_2_ANG_STEP>) ang_step_2,
-            (ParamFloat<px4::params::SID_2_T_E_FIX>) t_elevator_fix
+            (ParamFloat<px4::params::SID_2_T_E_FIX>) t_elevator_fix,
+            (ParamFloat<px4::params::SID_P_211_BEGIN>) pitch_211_begin,
+            (ParamFloat<px4::params::FW_MAN_P_SC>) man_pitch_scale
+
 	)
 };
 

@@ -59,7 +59,7 @@
  *
  * @group System Identification
  * @min 0
- * @max 1023
+ * @max 2047
  * @bit 0 --
  * @bit 1 fixed pitch (track airspeed)
  * @bit 2 fixed pitch (track pitch)
@@ -69,6 +69,7 @@
  * @bit 6 211 with elevator
  * @bit 7 211 with ailerons
  * @bit 8 211 with rudder
+ * @bit 9 free elevator (controlled by pilot)
  */
 PARAM_DEFINE_INT32(SID_MODES, 3);
 
@@ -212,7 +213,7 @@ PARAM_DEFINE_INT32(SID_2_ITER_MAX, 10);
  * @min -50
  * @max 50
  */
-PARAM_DEFINE_FLOAT(SID_2_ANG_STOP, 10);
+PARAM_DEFINE_FLOAT(SID_2_ANG_STOP, 0);
 
 /**
  * Angle Stop
@@ -224,7 +225,7 @@ PARAM_DEFINE_FLOAT(SID_2_ANG_STOP, 10);
  * @min -50
  * @max 50
  */
-PARAM_DEFINE_FLOAT(SID_2_ANG_START, 10);
+PARAM_DEFINE_FLOAT(SID_2_ANG_START, 30);
 
 /**
  * Angle Step
@@ -237,7 +238,7 @@ PARAM_DEFINE_FLOAT(SID_2_ANG_START, 10);
  * @min 0
  * @max 50
  */
-PARAM_DEFINE_FLOAT(SID_2_ANG_STEP, 10);
+PARAM_DEFINE_FLOAT(SID_2_ANG_STEP, 3);
 
 /**
  * Time to fix elevator
@@ -273,7 +274,19 @@ PARAM_DEFINE_FLOAT(SID_4_TIME_CONST, 1);
  * @min 0
  * @max 50
  */
-PARAM_DEFINE_FLOAT(SID_4_STEP, 0.01);
+PARAM_DEFINE_FLOAT(SID_P_211_BEGIN, 0.01);
+
+/**
+ * 211 pitch begin
+ *
+ * percentage of the total time left, measured form the fixation of the elevator, until the 211 maneuver shall begin.
+ *
+ * @group System Identification
+ * @unit
+ * @min 0
+ * @max 1
+ */
+PARAM_DEFINE_FLOAT(SID_4_STEP, 0.3333);
 
 /**
  * Maximal amount of iterations

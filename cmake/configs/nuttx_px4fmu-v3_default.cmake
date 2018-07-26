@@ -21,6 +21,7 @@ set(config_module_list
 
 	drivers/airspeed
 	drivers/aoas
+	drivers/aoas_2
 	drivers/batt_smbus
 	drivers/blinkm
 	drivers/boards

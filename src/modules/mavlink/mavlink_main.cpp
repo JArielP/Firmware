@@ -2018,7 +2018,7 @@ Mavlink::task_main(int argc, char *argv[])
 		configure_stream("VFR_HUD", 4.0f);
 		configure_stream("WIND_COV", 1.0f);
 		configure_stream("CAMERA_IMAGE_CAPTURED");
-		//configure_stream("FTERO_SENSORS", 10.0f);
+		configure_stream("FTERO_SENSORS", 10.0f);
 		break;
 
 	case MAVLINK_MODE_ONBOARD:
